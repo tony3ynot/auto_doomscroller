@@ -1,0 +1,30 @@
+# Android / Gradle
+.gradle/
+.kotlin/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+uv.lock
+
+# Personal data and model binaries never go into git
+data/
+exports/
+ml/data/
+ml/models/
+*.tflite
+*.onnx
+
+.DS_Store
