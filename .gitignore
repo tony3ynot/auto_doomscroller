@@ -28,3 +28,6 @@ ml/models/
 *.onnx
 
 .DS_Store
+
+# Node-tree dumps contain captions and creator names from your own feed
+reels_dump*.txt

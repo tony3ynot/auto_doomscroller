@@ -96,19 +96,33 @@ android/   Android app (Kotlin, Jetpack Compose)
 ml/        Offline analysis, baselines, metrics, encoder quantization (Python)
 web/       Browser extension (planned)
 docs/      Data format
+scripts/   Build / install helpers
 ```
 
 ## Getting started
 
 ### Android app
 
-Requirements: Android Studio, a phone running Android 11 or later (Android 14+
-recommended), USB debugging enabled.
+Requirements: JDK 17+ and the Android SDK (platform 36, build-tools 35), or Android
+Studio. A phone running Android 11 or later (Android 14+ recommended) with USB debugging
+on.
 
-1. Open `android/` in Android Studio and run the `app` configuration on your phone.
-2. On the phone: **Settings → Accessibility → auto_doomscroller → On**.
-3. In the app, pick **Learning** and go watch Reels.
-4. Tap **Export** and pull the data:
+From the command line (Linux or WSL):
+
+```bash
+scripts/run-debug.sh            # build, install on the phone, launch
+scripts/run-debug.sh --logcat   # ...then stream the debug logs
+```
+
+On WSL the script calls the Windows `adb.exe`, so a USB-connected phone works without
+extra setup. Alternatively, open `android/` in Android Studio and run the `app`
+configuration.
+
+Then:
+
+1. On the phone: **Settings → Accessibility → auto_doomscroller → On**.
+2. In the app, pick **Learning** and go watch Reels.
+3. Tap **Export** and pull the data:
 
    ```bash
    adb pull /sdcard/Android/data/com.autodoomscroller/files/exports ./data/
