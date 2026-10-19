@@ -4,16 +4,21 @@ import android.accessibilityservice.AccessibilityService
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.autodoomscroller.AppGraph
 import com.autodoomscroller.BuildConfig
+import com.autodoomscroller.adapter.FeedState
 import com.autodoomscroller.adapter.InstagramReelsAdapter
 import com.autodoomscroller.adapter.NodeTreeDumper
 import com.autodoomscroller.adapter.TargetAppAdapter
 import com.autodoomscroller.autopilot.AutoPilot
 import com.autodoomscroller.session.SessionController
 import com.autodoomscroller.session.SessionMode
+import com.autodoomscroller.tracking.Fingerprint
+import com.autodoomscroller.tracking.LoopDetector
+import com.autodoomscroller.tracking.MediaType
 import com.autodoomscroller.tracking.ReelSnapshot
 import com.autodoomscroller.tracking.ReelTracker
 import kotlinx.coroutines.CoroutineScope
@@ -25,21 +30,27 @@ import kotlinx.coroutines.launch
 /**
  * Entry point for everything that happens inside the target apps.
  *
- * Only events from packages with a [TargetAppAdapter] are inspected. For any other app the
- * service only notes that the user left, without reading its screen.
+ * Only packages with a [TargetAppAdapter] are inspected. For any other app the service only
+ * notes that the user left, without reading its screen.
  */
 class ReelsAccessibilityService : AccessibilityService() {
 
     private val adapters: Map<String, TargetAppAdapter> =
         listOf<TargetAppAdapter>(InstagramReelsAdapter()).associateBy { it.packageName }
 
-    private val handler = Handler(Looper.getMainLooper())
+    // Separate handlers: frame timers are cancelled on every new reel, reads are not.
+    private val readHandler = Handler(Looper.getMainLooper())
+    private val frameHandler = Handler(Looper.getMainLooper())
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     private lateinit var tracker: ReelTracker
     private lateinit var capturer: ScreenCapturer
     private lateinit var autoPilot: AutoPilot
-    private var lastTreeDumpAtMs = 0L
+    private var loopDetector = LoopDetector()
+    private var showingOtherItem = false
+    private var lastOtherAdSkipAtMs = 0L
+    private var readScheduled = false
+    private var lastReadAtMs = 0L
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -54,69 +65,156 @@ class ReelsAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (SessionController.mode.value == SessionMode.OFF) return
+        if (event.packageName?.toString() in adapters) {
+            scheduleRead()
+        } else if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            stopTracking()
+        }
+    }
+
+    /**
+     * Target apps fire content-change events many times a second while a video plays.
+     * Reading the node tree is a chain of IPC calls, so coalesce events into at most one
+     * read per [READ_INTERVAL_MS].
+     */
+    private fun scheduleRead() {
+        if (readScheduled) return
+        readScheduled = true
+        val waitMs = (lastReadAtMs + READ_INTERVAL_MS - SystemClock.uptimeMillis()).coerceAtLeast(0)
+        readHandler.postDelayed(::readFeed, waitMs)
+    }
+
+    private fun readFeed() {
+        readScheduled = false
+        lastReadAtMs = SystemClock.uptimeMillis()
         val mode = SessionController.mode.value
         if (mode == SessionMode.OFF) return
-
-        val adapter = adapters[event.packageName?.toString()]
-        if (adapter == null) {
-            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) stopTracking()
-            return
-        }
-
         val root = rootInActiveWindow ?: return
-        if (BuildConfig.DEBUG) maybeDumpTree(root)
+        val adapter = adapters[root.packageName?.toString()] ?: return
 
-        val reel = adapter.readCurrentReel(root)
-        if (reel == null) {
-            // Nodes briefly disappear during scroll animations, so only a window change
-            // (e.g. opening DMs) counts as leaving the Reels feed.
-            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) stopTracking()
-            return
+        val state = adapter.read(root)
+        if (BuildConfig.DEBUG) {
+            val tookMs = SystemClock.uptimeMillis() - lastReadAtMs
+            if (tookMs > SLOW_READ_MS) Log.d(TAG, "slow read: ${tookMs}ms")
         }
-        if (tracker.onReelObserved(reel, mode)) onNewReel(reel)
+        when (state) {
+            is FeedState.OnReel -> {
+                showingOtherItem = false
+                if (tracker.onReelObserved(state.snapshot, mode)) onNewReel(state.snapshot)
+                maybeSkipAd()
+            }
+            is FeedState.OtherItem -> onOtherItem(state, root)
+            FeedState.NotOnFeed -> stopTracking()
+            FeedState.Unknown -> Unit
+        }
+    }
+
+    private fun onOtherItem(state: FeedState.OtherItem, root: AccessibilityNodeInfo) {
+        if (!showingOtherItem) {
+            showingOtherItem = true
+            cancelFrames()
+            tracker.endCurrent(movedToNext = true)
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "other feed item (ad=${state.isAd})")
+                NodeTreeDumper.dump(root)
+                getExternalFilesDir(DEBUG_DUMP_DIR)?.let { NodeTreeDumper.save(root, it, "other-item") }
+            }
+        }
+        // Don't fight a user who scrolled back to the item on purpose.
+        val now = SystemClock.uptimeMillis()
+        if (state.isAd && now - lastOtherAdSkipAtMs > OTHER_AD_SKIP_PAUSE_MS && autoPilot.onAdItem()) {
+            lastOtherAdSkipAtMs = now
+            if (BuildConfig.DEBUG) Log.d(TAG, "skipped ad item")
+        }
+    }
+
+    /** The ad label can render a moment after the reel, so this runs on every read. */
+    private fun maybeSkipAd() {
+        val reel = tracker.currentSnapshot ?: return
+        if (tracker.currentAutoSkipped || tracker.currentUndone) return
+        if (autoPilot.onAd(reel)) tracker.markAutoSkipped()
     }
 
     private fun onNewReel(reel: ReelSnapshot) {
-        handler.removeCallbacksAndMessages(null)
-        if (autoPilot.isUndo(reel.key)) tracker.markUndone()
+        cancelFrames()
+        if (autoPilot.isUndo(reel)) tracker.markUndone()
+        val sequence = tracker.currentSequence ?: return
+        loopDetector = LoopDetector()
         for (offsetMs in FRAME_OFFSETS_MS) {
-            handler.postDelayed({ captureFrame(reel.key) }, offsetMs)
+            frameHandler.postDelayed({ captureFrame(sequence, keep = true) }, offsetMs)
         }
+        frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_START_MS)
+        if (BuildConfig.DEBUG) frameHandler.postDelayed({ dumpTree(sequence) }, TREE_DUMP_DELAY_MS)
         // TODO: after the last frame, run FeatureExtractor + PreferenceModel and pass
         //  P(skip) to autoPilot.onPrediction(); call tracker.markAutoSkipped() if it skips.
-        // TODO: loop detection (frame similarity to the first frame) -> tracker.markLooped().
     }
 
-    private fun captureFrame(reelKey: String) {
-        capturer.capture { frame ->
-            if (frame != null && tracker.currentReelKey == reelKey) tracker.addFrame(frame)
+    /** [keep]: store the frame with the reel (first frames); otherwise it only feeds loop detection. */
+    private fun captureFrame(sequence: Int, keep: Boolean) {
+        capturer.capture(stillWanted = { tracker.currentSequence == sequence }) { frame ->
+            val elapsedMs = tracker.currentElapsedMs
+            if (tracker.currentSequence != sequence || elapsedMs == null) {
+                frame.recycle()
+                return@capture
+            }
+            loopDetector.add(Fingerprint.of(frame), elapsedMs)?.let(tracker::onLoopEstimated)
+            if (keep) tracker.addFrame(sequence, frame) else frame.recycle()
         }
+    }
+
+    /**
+     * Videos: keep sampling about once a second until the video is seen starting over.
+     * Reels with a scrubber already know their length, so they are only sampled in research
+     * mode, where the scrubber serves as ground truth for the estimate.
+     */
+    private fun sampleForLoop(sequence: Int) {
+        val reel = tracker.currentSnapshot ?: return
+        val elapsedMs = tracker.currentElapsedMs ?: return
+        if (tracker.currentSequence != sequence || tracker.currentLoopEstimated || elapsedMs > LOOP_SAMPLING_MAX_MS) return
+        if (reel.mediaType != MediaType.VIDEO || reel.isAd) return
+        if (reel.durationMs != null && !SessionController.researchMode.value) return
+        captureFrame(sequence, keep = false)
+        frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_INTERVAL_MS)
+    }
+
+    private fun cancelFrames() {
+        frameHandler.removeCallbacksAndMessages(null)
+        capturer.cancelPending()
     }
 
     private fun stopTracking() {
-        handler.removeCallbacksAndMessages(null)
+        cancelFrames()
         tracker.stop()
     }
 
-    /** Debug builds log the node tree so the adapters can be written against the real UI. */
-    private fun maybeDumpTree(root: AccessibilityNodeInfo) {
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastTreeDumpAtMs < TREE_DUMP_INTERVAL_MS) return
-        lastTreeDumpAtMs = now
-        NodeTreeDumper.dump(root)
+    /** Debug builds log each reel's node tree once, so adapters can be written against the real UI. */
+    private fun dumpTree(sequence: Int) {
+        if (tracker.currentSequence != sequence) return
+        val root = rootInActiveWindow ?: return
+        if (root.packageName?.toString() in adapters) NodeTreeDumper.dump(root)
     }
 
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
+        readHandler.removeCallbacksAndMessages(null)
         stopTracking()
         scope.cancel()
         super.onDestroy()
     }
 
     private companion object {
-        /** Frames taken after a reel starts. Spaced out because takeScreenshot() is rate limited. */
+        const val TAG = "ReelsService"
+        const val READ_INTERVAL_MS = 250L
+        const val SLOW_READ_MS = 50L
+        /** Frames taken after a reel starts; ScreenCapturer spaces them to respect the rate limit. */
         val FRAME_OFFSETS_MS = longArrayOf(300, 800, 1_300)
-        const val TREE_DUMP_INTERVAL_MS = 5_000L
+        const val LOOP_SAMPLING_START_MS = 2_300L
+        const val LOOP_SAMPLING_INTERVAL_MS = 1_000L
+        const val LOOP_SAMPLING_MAX_MS = 120_000L
+        const val TREE_DUMP_DELAY_MS = 2_000L
+        const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
+        const val DEBUG_DUMP_DIR = "debug-dumps"
     }
 }

@@ -1,39 +1,55 @@
 package com.autodoomscroller.tracking
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Same cases as ml/tests/test_labels.py. */
 class ReelLabelerTest {
 
-    @Test
-    fun quickSwipeIsSkip() {
-        assertEquals(ReelLabel.SKIP, ReelLabeler.label(1_500, looped = false, liked = false, movedToNext = true))
-    }
+    private fun label(
+        dwellMs: Long,
+        completed: Boolean = false,
+        liked: Boolean = false,
+        saved: Boolean = false,
+        movedToNext: Boolean = true,
+    ) = ReelLabeler.label(dwellMs, completed, liked, saved, movedToNext)
 
     @Test
-    fun leavingTheAppQuicklyIsIgnored() {
-        assertNull(ReelLabeler.label(1_500, looped = false, liked = false, movedToNext = false))
-    }
+    fun quickSwipeIsSkip() = assertEquals(ReelLabel.SKIP, label(1_500))
 
     @Test
-    fun loopIsWatch() {
-        assertEquals(ReelLabel.WATCH, ReelLabeler.label(9_000, looped = true, liked = false, movedToNext = true))
-    }
+    fun leavingTheFeedQuicklyIsIgnored() = assertNull(label(1_500, movedToNext = false))
 
     @Test
-    fun likeIsWatchEvenWhenQuick() {
-        assertEquals(ReelLabel.WATCH, ReelLabeler.label(1_000, looped = false, liked = true, movedToNext = true))
-    }
+    fun completedIsWatchEvenWhenShort() = assertEquals(ReelLabel.WATCH, label(3_000, completed = true))
 
     @Test
-    fun longDwellIsWatch() {
-        assertEquals(ReelLabel.WATCH, ReelLabeler.label(20_000, looped = false, liked = false, movedToNext = true))
-    }
+    fun likeIsWatchEvenWhenQuick() = assertEquals(ReelLabel.WATCH, label(1_000, liked = true))
 
     @Test
-    fun middleDwellIsIgnored() {
-        assertNull(ReelLabeler.label(8_000, looped = false, liked = false, movedToNext = true))
-    }
+    fun saveIsWatchEvenWhenQuick() = assertEquals(ReelLabel.WATCH, label(1_000, saved = true))
+
+    @Test
+    fun longDwellIsWatch() = assertEquals(ReelLabel.WATCH, label(5_000))
+
+    @Test
+    fun middleDwellIsIgnored() = assertNull(label(3_500))
+
+    @Test
+    fun loopCountsAsCompleted() = assertTrue(ReelLabeler.isCompleted(looped = true, maxPositionMs = null, durationMs = null))
+
+    @Test
+    fun scrubberNearTheEndCountsAsCompleted() =
+        assertTrue(ReelLabeler.isCompleted(looped = false, maxPositionMs = 32_000, durationMs = 35_000))
+
+    @Test
+    fun scrubberHalfwayIsNotCompleted() =
+        assertFalse(ReelLabeler.isCompleted(looped = false, maxPositionMs = 17_000, durationMs = 35_000))
+
+    @Test
+    fun unknownLengthIsNotCompleted() =
+        assertFalse(ReelLabeler.isCompleted(looped = false, maxPositionMs = 9_000, durationMs = null))
 }

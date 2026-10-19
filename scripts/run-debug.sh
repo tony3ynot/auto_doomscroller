@@ -11,7 +11,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APK="$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 APP_ID="com.autodoomscroller"
-LOG_TAGS=(NodeTree ScreenCapturer)
+LOG_TAGS=(ReelTracker ScreenCapturer ReelsService NodeTree)
 
 find_adb() {
   if [[ -n "${ADB:-}" ]]; then echo "$ADB"; return; fi

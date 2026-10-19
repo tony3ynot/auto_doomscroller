@@ -53,6 +53,7 @@ fun HomeScreen() {
     }
     val mode by SessionController.mode.collectAsStateWithLifecycle()
     val researchMode by SessionController.researchMode.collectAsStateWithLifecycle()
+    val adSkip by SessionController.adSkip.collectAsStateWithLifecycle()
     val labeledCount by AppGraph.reelRepository.observeLabeledCount()
         .collectAsStateWithLifecycle(initialValue = 0)
 
@@ -87,6 +88,16 @@ fun HomeScreen() {
                     // TODO: enable once PreferenceModel is trained (300+ labeled reels and the
                     //  validation precision target is met).
                     ModeOption("Auto: skips what you would skip", SessionMode.AUTO, mode, enabled = false)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Skip ads")
+                            Text(
+                                "Swipes past ads as soon as they appear",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Switch(checked = adSkip, onCheckedChange = { SessionController.setAdSkip(it) })
+                    }
                 }
             }
 

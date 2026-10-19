@@ -24,6 +24,15 @@ it only predicts one thing, **will you skip this reel?**
 4. **Corrections.** Swipe back to a reel it skipped and that counts as "should have
    watched". It learns from that too, so it improves the more you use it.
 
+It also understands what it is looking at: videos, single images, carousels and ads. Video
+length comes from the on-screen scrubber when there is one, and otherwise from noticing
+when the video starts over, so "watched to the end" means the same thing for a 7-second
+clip and a 60-second one.
+
+**Skip ads (optional).** Ads are detected from their label and can be swiped past the
+moment they appear. This needs no training, so it works from the first day. Off by
+default.
+
 ```mermaid
 flowchart LR
     A[Reels on screen] --> B[Accessibility service]
@@ -43,8 +52,8 @@ flowchart LR
 | Label | Rule (initial thresholds) |
 |---|---|
 | `SKIP` | Swiped to the next reel within 2 s |
-| `WATCH` | Looped, liked, or stayed 20 s or more |
-| no label | Anything in between. Too ambiguous to learn from |
+| `WATCH` | Watched to the end, liked, saved, or stayed 5 s or more |
+| no label | Anything in between, and ads. Too ambiguous to learn from |
 
 Details: [docs/data-format.md](docs/data-format.md).
 
@@ -61,7 +70,8 @@ right.
 - Raw video and audio are never stored. Thumbnails are kept only if you turn on research
   mode, and you can delete them, the log, or everything at any time.
 - Only the screens of supported apps are read.
-- It never likes, comments, follows or shares on your behalf. Auto mode only swipes.
+- It never likes, comments, follows or shares on your behalf. Auto mode and ad skip only
+  swipe.
 
 ## Performance
 

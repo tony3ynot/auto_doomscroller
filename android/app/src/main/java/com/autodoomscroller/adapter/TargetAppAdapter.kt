@@ -7,6 +7,18 @@ import com.autodoomscroller.tracking.ReelSnapshot
 interface TargetAppAdapter {
     val packageName: String
 
-    /** The reel currently on screen, or null if the user is not on the short-video feed. */
-    fun readCurrentReel(root: AccessibilityNodeInfo): ReelSnapshot?
+    fun read(root: AccessibilityNodeInfo): FeedState
+}
+
+sealed interface FeedState {
+    data class OnReel(val snapshot: ReelSnapshot) : FeedState
+
+    /** The short-video feed is not on screen (e.g. the user swiped over to DMs). */
+    data object NotOnFeed : FeedState
+
+    /** The feed is on screen but the current reel can't be read yet (loading, mid-swipe). */
+    data object Unknown : FeedState
+
+    /** A feed item that isn't a regular reel, e.g. a collage of several ads. */
+    data class OtherItem(val isAd: Boolean) : FeedState
 }
