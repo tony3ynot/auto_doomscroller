@@ -52,8 +52,12 @@ flowchart LR
 | Label | Rule (initial thresholds) |
 |---|---|
 | `SKIP` | Swiped to the next reel within 2 s |
-| `WATCH` | Watched to the end, liked, saved, or stayed 5 s or more |
-| no label | Anything in between, and ads. Too ambiguous to learn from |
+| `WATCH` | Liked, saved, opened the comments, swiped a carousel, watched to the end, or stayed 5 s or more |
+| no label | Anything in between, ads, and reels left playing far longer than their length. Too ambiguous to learn from |
+
+`WATCH` means "gave it a chance", not "watched it all": Auto mode decides on first
+impression, which doesn't depend on a reel's length or type. How much you liked something
+is analysed separately from the raw signals.
 
 Details: [docs/data-format.md](docs/data-format.md).
 

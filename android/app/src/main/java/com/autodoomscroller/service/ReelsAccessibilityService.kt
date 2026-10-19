@@ -48,6 +48,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private lateinit var autoPilot: AutoPilot
     private var loopDetector = LoopDetector()
     private var showingOtherItem = false
+    private var lastDiscoveryDumpAtMs = 0L
     private var lastOtherAdSkipAtMs = 0L
     private var readScheduled = false
     private var lastReadAtMs = 0L
@@ -66,11 +67,23 @@ class ReelsAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (SessionController.mode.value == SessionMode.OFF) return
-        if (event.packageName?.toString() in adapters) {
+        val packageName = event.packageName?.toString()
+        if (packageName in adapters) {
             scheduleRead()
-        } else if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            stopTracking()
+            return
         }
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) stopTracking()
+        if (BuildConfig.DEBUG && packageName in DISCOVERY_PACKAGES) maybeDumpForDiscovery()
+    }
+
+    /** Debug builds periodically dump apps that don't have an adapter yet, to write one. */
+    private fun maybeDumpForDiscovery() {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastDiscoveryDumpAtMs < DISCOVERY_DUMP_INTERVAL_MS) return
+        val root = rootInActiveWindow ?: return
+        if (root.packageName?.toString() !in DISCOVERY_PACKAGES) return
+        lastDiscoveryDumpAtMs = now
+        NodeTreeDumper.dump(root)
     }
 
     /**
@@ -219,5 +232,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val TREE_DUMP_DELAY_MS = 2_000L
         const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
         const val DEBUG_DUMP_DIR = "debug-dumps"
+        val DISCOVERY_PACKAGES = setOf("com.google.android.youtube")
+        const val DISCOVERY_DUMP_INTERVAL_MS = 3_000L
     }
 }

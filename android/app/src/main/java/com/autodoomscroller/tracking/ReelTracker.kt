@@ -38,6 +38,8 @@ class ReelTracker(
         var durationSource: DurationSource? = null
         var maxPositionMs: Long? = null
         var loopEstimateMs: Long? = null
+        var carouselSwipes = 0
+        var lastSlideKey: Int? = null
         var lastPositionMs: Long? = null
         var autoSkipped = false
         var undone = false
@@ -73,15 +75,23 @@ class ReelTracker(
         val now = clock()
         val active = current
         if (active != null && active.snapshot.isSameReelAs(snapshot)) {
-            observePlayback(active, snapshot)
+            observe(active, snapshot)
             active.snapshot = active.snapshot.mergedWith(snapshot)
             if (snapshot.commentsOpen) active.openedComments = true
             return false
         }
         if (active != null) finish(active, now, movedToNext = true)
         val revisit = recentReels.any { it.isSameReelAs(snapshot) }
-        current = ActiveReel(snapshot, nextSequence++, now, mode, revisit).also { observePlayback(it, snapshot) }
+        current = ActiveReel(snapshot, nextSequence++, now, mode, revisit).also { observe(it, snapshot) }
         return true
+    }
+
+    private fun observe(reel: ActiveReel, snapshot: ReelSnapshot) {
+        snapshot.slideKey?.let { key ->
+            if (reel.lastSlideKey != null && key != reel.lastSlideKey) reel.carouselSwipes++
+            reel.lastSlideKey = key
+        }
+        observePlayback(reel, snapshot)
     }
 
     /** Scrubber readings: exact length, furthest point reached, and wrap-around = loop. */
@@ -144,12 +154,13 @@ class ReelTracker(
         val saved = snapshot.saved == true
         val dwellMs = endedAtMs - reel.startedAtMs
         val completed = ReelLabeler.isCompleted(reel.looped, reel.maxPositionMs, reel.durationMs, config)
+        val engaged = liked || saved || reel.openedComments || reel.carouselSwipes > 0
         val label = when {
             // Ads aren't content the user chose; their behaviour says little about taste.
             snapshot.isAd -> null
             reel.autoSkipped -> null
             reel.undone -> ReelLabel.WATCH
-            else -> ReelLabeler.label(dwellMs, completed, liked, saved, movedToNext, config)
+            else -> ReelLabeler.label(dwellMs, reel.durationMs, completed, engaged, movedToNext, config)
                 // Scrolling back through reels already seen isn't a judgement on them.
                 ?.takeUnless { it == ReelLabel.SKIP && reel.revisit }
         }
@@ -163,7 +174,10 @@ class ReelTracker(
                     (if (reel.revisit) " revisit" else "") +
                     " dur=${reel.durationMs ?: "?"}(${reel.durationSource ?: "-"}) max=${reel.maxPositionMs ?: "?"}" +
                     " est=${reel.loopEstimateMs ?: "?"}" +
-                    " looped=${reel.looped} liked=$liked frames=${reel.frames.size}" +
+                    " looped=${reel.looped} liked=$liked" +
+                    (if (reel.carouselSwipes > 0) " swipes=${reel.carouselSwipes}" else "") +
+                    (if (reel.openedComments) " comments" else "") +
+                    " frames=${reel.frames.size}" +
                     (if (reel.autoSkipped) " auto-skipped" else ""),
             )
         }
@@ -195,6 +209,7 @@ class ReelTracker(
             liked = liked,
             saved = saved,
             openedComments = reel.openedComments,
+            carouselSwipes = reel.carouselSwipes,
             likeCount = snapshot.likeCount,
             commentCount = snapshot.commentCount,
             autoSkipped = reel.autoSkipped,

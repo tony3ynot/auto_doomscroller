@@ -24,6 +24,8 @@ data class ReelSnapshot(
     val commentsOpen: Boolean,
     /** Position in the feed as reported by the app; restarts when the feed is refreshed. */
     val feedIndex: Int? = null,
+    /** Identifies the carousel slide on screen; a change means the user swiped. */
+    val slideKey: Int? = null,
 ) {
     val key: String
         get() = "$packageName|$creator|${caption.orEmpty().hashCode()}"
@@ -52,5 +54,6 @@ data class ReelSnapshot(
         durationMs = newer.durationMs ?: durationMs,
         commentsOpen = newer.commentsOpen,
         feedIndex = feedIndex ?: newer.feedIndex,
+        slideKey = newer.slideKey ?: slideKey,
     )
 }

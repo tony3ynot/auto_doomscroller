@@ -55,6 +55,7 @@ One line per reel the user landed on.
 | `liked` | bool | The like button was on when the reel ended |
 | `saved` | bool | The save button was on when the reel ended |
 | `opened_comments` | bool | The comment sheet was opened at some point |
+| `carousel_swipes` | int | Times the user swiped between carousel slides |
 | `like_count` | int or null | Like count shown on the reel (null if hidden) |
 | `comment_count` | int or null | Comment count shown on the reel |
 | `auto_skipped` | bool | Auto mode swiped past it |
@@ -71,11 +72,20 @@ thresholds offline (`autodoom.labels.relabel`). The rule, in order:
 
 1. `is_ad` or `auto_skipped` → no label (not content the user chose, or never watched)
 2. `undone` → `WATCH` (a correction; weight it higher when training)
-3. `liked` or `saved` or completed or dwell ≥ 5 s → `WATCH`
-4. `moved_to_next` and dwell < 2 s and not `revisit` → `SKIP`
-5. anything else → no label
+3. engaged (`liked`, `saved`, `opened_comments` or `carousel_swipes` > 0) → `WATCH`
+4. idle → no label: stayed longer than 3× `duration_ms` (at least 30 s), or longer than
+   60 s when the length is unknown, without engaging. Likely the phone was left alone
+5. completed or dwell ≥ 5 s → `WATCH`
+6. `moved_to_next` and dwell < 2 s and not `revisit` → `SKIP`
+7. anything else → no label
 
 "Completed" means `looped`, or `max_position_ms` ≥ 90% of `duration_ms`.
+
+The label answers what Auto mode decides in the first second and a half: would the user
+swipe away on first impression? That doesn't depend on length or media type, so `WATCH`
+means "gave it a chance", not "watched it all". How much the user liked a reel (watch
+ratio for videos, dwell percentile within the media type for images and carousels) is
+derived offline from the raw fields.
 
 ### Video length
 

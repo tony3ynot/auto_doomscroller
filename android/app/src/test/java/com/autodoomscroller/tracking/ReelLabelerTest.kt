@@ -11,11 +11,11 @@ class ReelLabelerTest {
 
     private fun label(
         dwellMs: Long,
+        durationMs: Long? = null,
         completed: Boolean = false,
-        liked: Boolean = false,
-        saved: Boolean = false,
+        engaged: Boolean = false,
         movedToNext: Boolean = true,
-    ) = ReelLabeler.label(dwellMs, completed, liked, saved, movedToNext)
+    ) = ReelLabeler.label(dwellMs, durationMs, completed, engaged, movedToNext)
 
     @Test
     fun quickSwipeIsSkip() = assertEquals(ReelLabel.SKIP, label(1_500))
@@ -24,19 +24,28 @@ class ReelLabelerTest {
     fun leavingTheFeedQuicklyIsIgnored() = assertNull(label(1_500, movedToNext = false))
 
     @Test
-    fun completedIsWatchEvenWhenShort() = assertEquals(ReelLabel.WATCH, label(3_000, completed = true))
+    fun completedIsWatchEvenWhenShort() = assertEquals(ReelLabel.WATCH, label(3_000, durationMs = 2_800, completed = true))
 
     @Test
-    fun likeIsWatchEvenWhenQuick() = assertEquals(ReelLabel.WATCH, label(1_000, liked = true))
+    fun engagementIsWatchEvenWhenQuick() = assertEquals(ReelLabel.WATCH, label(1_000, engaged = true))
 
     @Test
-    fun saveIsWatchEvenWhenQuick() = assertEquals(ReelLabel.WATCH, label(1_000, saved = true))
-
-    @Test
-    fun longDwellIsWatch() = assertEquals(ReelLabel.WATCH, label(5_000))
+    fun fiveSecondsIsWatchWhateverTheLength() = assertEquals(ReelLabel.WATCH, label(5_000, durationMs = 120_000))
 
     @Test
     fun middleDwellIsIgnored() = assertNull(label(3_500))
+
+    @Test
+    fun shortReelLeftLoopingIsIdle() = assertNull(label(40_000, durationMs = 6_000, completed = true))
+
+    @Test
+    fun longReelWatchedForAWhileIsNotIdle() = assertEquals(ReelLabel.WATCH, label(100_000, durationMs = 145_000))
+
+    @Test
+    fun imageStaredAtForMinutesIsIdle() = assertNull(label(90_000))
+
+    @Test
+    fun engagementOverridesIdle() = assertEquals(ReelLabel.WATCH, label(90_000, engaged = true))
 
     @Test
     fun loopCountsAsCompleted() = assertTrue(ReelLabeler.isCompleted(looped = true, maxPositionMs = null, durationMs = null))
@@ -48,8 +57,4 @@ class ReelLabelerTest {
     @Test
     fun scrubberHalfwayIsNotCompleted() =
         assertFalse(ReelLabeler.isCompleted(looped = false, maxPositionMs = 17_000, durationMs = 35_000))
-
-    @Test
-    fun unknownLengthIsNotCompleted() =
-        assertFalse(ReelLabeler.isCompleted(looped = false, maxPositionMs = 9_000, durationMs = null))
 }

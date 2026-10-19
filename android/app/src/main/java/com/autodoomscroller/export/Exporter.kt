@@ -64,6 +64,7 @@ object Exporter {
         .put("liked", liked)
         .put("saved", saved)
         .put("opened_comments", openedComments)
+        .put("carousel_swipes", carouselSwipes)
         .put("like_count", likeCount ?: JSONObject.NULL)
         .put("comment_count", commentCount ?: JSONObject.NULL)
         .put("auto_skipped", autoSkipped)

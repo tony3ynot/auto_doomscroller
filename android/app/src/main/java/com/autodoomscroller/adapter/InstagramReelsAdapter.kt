@@ -39,6 +39,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         var detailReads = 0
         var state: State? = null
         var lastStateAtMs = 0L
+        var slideKey: Int? = null
     }
 
     private var cache: PageCache? = null
@@ -76,6 +77,10 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         if (entry.state == null || now - entry.lastStateAtMs >= STATE_INTERVAL_MS) {
             entry.state = readState(root, page)
             entry.lastStateAtMs = now
+        }
+        if (entry.details?.mediaType == MediaType.CAROUSEL) {
+            // A different slide view on screen means the user swiped; two visible means mid-swipe.
+            page.findById(CAROUSEL_IMAGE).singleOrNull { it.isVisibleToUser }?.let { entry.slideKey = it.hashCode() }
         }
         return FeedState.OnReel(snapshotOf(entry))
     }
@@ -126,6 +131,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
             durationMs = state.durationMs,
             commentsOpen = state.commentsOpen,
             feedIndex = entry.page.collectionItemInfo?.rowIndex,
+            slideKey = entry.slideKey,
         )
     }
     /** Caption, ad label, etc. can render late, so later reads fill in what earlier ones missed. */
@@ -225,6 +231,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         const val COMMENT_INPUT = "layout_comment_thread_edittext_multiline"
         const val SCRUBBER = "scrubber"
         const val CAROUSEL = "clips_carousel_viewpager"
+        const val CAROUSEL_IMAGE = "clips_carousel_image_media_content"
         const val SINGLE_IMAGE = "clips_single_image_media_content"
         const val SINGLE_IMAGE_AD = "clips_single_image_ads_media_content"
         const val VIDEO_CONTAINER = "clips_video_container"
