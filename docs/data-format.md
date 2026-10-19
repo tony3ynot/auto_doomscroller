@@ -51,7 +51,7 @@ One line per reel the user landed on.
 | `duration_ms` | int or null | Length of the video, if known |
 | `duration_source` | `SCRUBBER`, `LOOP` or null | Read from the on-screen scrubber, or estimated by seeing the video start over |
 | `max_position_ms` | int or null | Furthest playback position read from the scrubber |
-| `loop_estimate_ms` | int or null | Length estimated by frame-based loop detection. In research mode it is also recorded for reels with a scrubber, so `duration_ms` can serve as ground truth for the estimate |
+| `loop_estimate_ms` | int or null | Length estimated by frame-based loop detection. In research mode it is also recorded for about one in four reels with a scrubber, so `duration_ms` can serve as ground truth for the estimate |
 | `liked` | bool | The like button was on when the reel ended |
 | `saved` | bool | The save button was on when the reel ended |
 | `opened_comments` | bool | The comment sheet was opened at some point |

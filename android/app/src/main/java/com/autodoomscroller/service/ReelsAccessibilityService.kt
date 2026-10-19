@@ -165,15 +165,17 @@ class ReelsAccessibilityService : AccessibilityService() {
 
     /**
      * Videos: keep sampling about once a second until the video is seen starting over.
-     * Reels with a scrubber already know their length, so they are only sampled in research
-     * mode, where the scrubber serves as ground truth for the estimate.
+     * Reels with a scrubber already know their length. In research mode one in
+     * [VALIDATION_SAMPLE_EVERY] of them is sampled anyway, with the scrubber as ground truth
+     * for the estimate; a sample is enough for that, and screenshots are the main battery cost.
      */
     private fun sampleForLoop(sequence: Int) {
         val reel = tracker.currentSnapshot ?: return
         val elapsedMs = tracker.currentElapsedMs ?: return
         if (tracker.currentSequence != sequence || tracker.currentLoopEstimated || elapsedMs > LOOP_SAMPLING_MAX_MS) return
         if (reel.mediaType != MediaType.VIDEO || reel.isAd) return
-        if (reel.durationMs != null && !SessionController.researchMode.value) return
+        val validate = SessionController.researchMode.value && sequence % VALIDATION_SAMPLE_EVERY == 0
+        if (reel.durationMs != null && !validate) return
         captureFrame(sequence, keep = false)
         frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_INTERVAL_MS)
     }
@@ -213,6 +215,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val LOOP_SAMPLING_START_MS = 2_300L
         const val LOOP_SAMPLING_INTERVAL_MS = 1_000L
         const val LOOP_SAMPLING_MAX_MS = 120_000L
+        const val VALIDATION_SAMPLE_EVERY = 4
         const val TREE_DUMP_DELAY_MS = 2_000L
         const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
         const val DEBUG_DUMP_DIR = "debug-dumps"
