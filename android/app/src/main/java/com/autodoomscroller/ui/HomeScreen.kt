@@ -54,8 +54,8 @@ fun HomeScreen() {
     val mode by SessionController.mode.collectAsStateWithLifecycle()
     val researchMode by SessionController.researchMode.collectAsStateWithLifecycle()
     val adSkip by SessionController.adSkip.collectAsStateWithLifecycle()
-    val labeledCount by AppGraph.reelRepository.observeLabeledCount()
-        .collectAsStateWithLifecycle(initialValue = 0)
+    val labeledCounts by AppGraph.reelRepository.observeLabeledCounts()
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
 
     Scaffold { padding ->
         Column(
@@ -104,7 +104,11 @@ fun HomeScreen() {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Data", style = MaterialTheme.typography.titleMedium)
-                    Text("$labeledCount labeled reels")
+                    Text("Labeled: ${labeledCounts.values.sum()}", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Instagram Reels ${labeledCounts[INSTAGRAM] ?: 0} · YouTube Shorts ${labeledCounts[YOUTUBE] ?: 0}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Save thumbnails (research mode)", Modifier.weight(1f))
                         Switch(
@@ -132,6 +136,9 @@ fun HomeScreen() {
         }
     }
 }
+
+private const val INSTAGRAM = "com.instagram.android"
+private const val YOUTUBE = "com.google.android.youtube"
 
 @Composable
 private fun ModeOption(label: String, value: SessionMode, current: SessionMode, enabled: Boolean) {

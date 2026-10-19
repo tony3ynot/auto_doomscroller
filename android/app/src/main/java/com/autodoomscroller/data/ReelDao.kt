@@ -6,6 +6,8 @@ import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
+data class AppCount(val packageName: String, val count: Int)
+
 @Dao
 interface ReelDao {
     @Insert
@@ -17,8 +19,8 @@ interface ReelDao {
     @Insert
     suspend fun insertReel(reel: ReelEntity): Long
 
-    @Query("SELECT COUNT(*) FROM reels WHERE label IS NOT NULL")
-    fun observeLabeledCount(): Flow<Int>
+    @Query("SELECT packageName, COUNT(*) AS count FROM reels WHERE label IS NOT NULL GROUP BY packageName")
+    fun observeLabeledCounts(): Flow<List<AppCount>>
 
     @Query("SELECT * FROM sessions ORDER BY startedAtMs")
     suspend fun allSessions(): List<SessionEntity>
