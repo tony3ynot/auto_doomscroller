@@ -1,6 +1,7 @@
 package com.autodoomscroller.service
 
 import android.accessibilityservice.AccessibilityService
+import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -161,8 +162,9 @@ class ReelsAccessibilityService : AccessibilityService() {
         if (autoPilot.isUndo(reel)) tracker.markUndone()
         val sequence = tracker.currentSequence ?: return
         loopDetector = LoopDetector()
-        for (offsetMs in FRAME_OFFSETS_MS) {
-            frameHandler.postDelayed({ captureFrame(sequence, keep = true) }, offsetMs)
+        FRAME_OFFSETS_MS.forEachIndexed { index, offsetMs ->
+            val keepHiRes = index == FRAME_OFFSETS_MS.lastIndex
+            frameHandler.postDelayed({ captureFrame(sequence, keep = true, keepHiRes = keepHiRes) }, offsetMs)
         }
         frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_START_MS)
         if (BuildConfig.DEBUG) frameHandler.postDelayed({ dumpTree(sequence) }, TREE_DUMP_DELAY_MS)
@@ -170,16 +172,22 @@ class ReelsAccessibilityService : AccessibilityService() {
         //  P(skip) to autoPilot.onPrediction(); call tracker.markAutoSkipped() if it skips.
     }
 
-    /** [keep]: store the frame with the reel (first frames); otherwise it only feeds loop detection. */
-    private fun captureFrame(sequence: Int, keep: Boolean) {
-        capturer.capture(stillWanted = { tracker.currentSequence == sequence }) { frame ->
+    /**
+     * [keep]: store a thumbnail with the reel (first frames); otherwise the frame only feeds loop
+     * detection. [keepHiRes]: also keep the full capture, readable enough for OCR.
+     */
+    private fun captureFrame(sequence: Int, keep: Boolean, keepHiRes: Boolean = false) {
+        capturer.capture(stillWanted = { tracker.currentSequence == sequence }) { capture ->
             val elapsedMs = tracker.currentElapsedMs
             if (tracker.currentSequence != sequence || elapsedMs == null) {
-                frame.recycle()
+                capture.recycle()
                 return@capture
             }
-            loopDetector.add(Fingerprint.of(frame), elapsedMs)?.let(tracker::onLoopEstimated)
-            if (keep) tracker.addFrame(sequence, frame) else frame.recycle()
+            val hiRes = if (keepHiRes) capture.copy(capture.config ?: Bitmap.Config.ARGB_8888, false) else null
+            val thumbnail = capture.scaledToWidth(ScreenCapturer.THUMBNAIL_WIDTH)
+            loopDetector.add(Fingerprint.of(thumbnail), elapsedMs)?.let(tracker::onLoopEstimated)
+            if (keep) tracker.addFrame(sequence, thumbnail) else thumbnail.recycle()
+            hiRes?.let { tracker.setHiResFrame(sequence, it) }
         }
     }
 

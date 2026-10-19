@@ -8,7 +8,8 @@ exports/<yyyyMMdd-HHmmss>/
 ├── sessions.jsonl
 ├── reels.jsonl
 └── thumbnails/            # research mode only
-    └── <reel_id>_<frame_index>.jpg
+    ├── <reel_id>_<frame_index>.jpg
+    └── <reel_id>_hires.jpg
 ```
 
 Pull an export from the phone with:
@@ -98,5 +99,9 @@ carousels have no length.
 
 ## Thumbnails
 
-Saved only when research mode is on. Width 224 px, original aspect ratio, JPEG. The
-encoder input (224×224 center crop) is produced from these at inference time.
+Saved only when research mode is on, JPEG, original aspect ratio:
+
+- `<reel_id>_<frame_index>.jpg`: 224 px wide, taken about 0.3 s, 0.8 s and 1.3 s into the
+  reel. The encoder input (224×224 center crop) is produced from these.
+- `<reel_id>_hires.jpg`: the 1.3 s frame at 540 px wide, so on-screen text (subtitles, meme
+  captions) is readable for OCR.

@@ -44,6 +44,7 @@ class ReelTracker(
         var autoSkipped = false
         var undone = false
         val frames = mutableListOf<Bitmap>()
+        var hiResFrame: Bitmap? = null
     }
 
     private var current: ActiveReel? = null
@@ -111,6 +112,15 @@ class ReelTracker(
     fun addFrame(sequence: Int, frame: Bitmap) {
         val active = current
         if (active != null && active.sequence == sequence) active.frames.add(frame) else frame.recycle()
+    }
+
+    fun setHiResFrame(sequence: Int, frame: Bitmap) {
+        val active = current
+        if (active != null && active.sequence == sequence && active.hiResFrame == null) {
+            active.hiResFrame = frame
+        } else {
+            frame.recycle()
+        }
     }
 
     /**
@@ -185,8 +195,10 @@ class ReelTracker(
 
         val sessionId = SessionController.sessionId
         val frames = reel.frames.toList()
+        val hiResFrame = reel.hiResFrame
         if (sessionId == null) {
             frames.forEach(Bitmap::recycle)
+            hiResFrame?.recycle()
             return
         }
         val entity = ReelEntity(
@@ -224,8 +236,12 @@ class ReelTracker(
         val keepFrames = SessionController.researchMode.value
         scope.launch {
             val reelId = repository.saveReel(entity)
-            if (keepFrames) frames.forEachIndexed { index, frame -> thumbnails.save(reelId, index, frame) }
+            if (keepFrames) {
+                frames.forEachIndexed { index, frame -> thumbnails.save(reelId, index, frame) }
+                hiResFrame?.let { thumbnails.saveHiRes(reelId, it) }
+            }
             frames.forEach(Bitmap::recycle)
+            hiResFrame?.recycle()
         }
     }
 

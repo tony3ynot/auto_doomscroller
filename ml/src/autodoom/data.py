@@ -18,6 +18,13 @@ def load_export(export_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
 
 
 def thumbnail_paths(export_dir: str | Path, reel_id: int) -> list[Path]:
-    """Frames saved for one reel in research mode, in capture order."""
+    """224 px frames saved for one reel in research mode, in capture order."""
     thumbs = Path(export_dir) / "thumbnails"
-    return sorted(thumbs.glob(f"{reel_id}_*.jpg"), key=lambda p: int(p.stem.split("_")[1]))
+    frames = [p for p in thumbs.glob(f"{reel_id}_*.jpg") if p.stem.split("_")[1].isdigit()]
+    return sorted(frames, key=lambda p: int(p.stem.split("_")[1]))
+
+
+def hires_path(export_dir: str | Path, reel_id: int) -> Path | None:
+    """The 540 px frame saved for OCR, if any."""
+    path = Path(export_dir) / "thumbnails" / f"{reel_id}_hires.jpg"
+    return path if path.exists() else None
