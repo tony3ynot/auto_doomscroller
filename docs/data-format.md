@@ -36,13 +36,14 @@ One line per reel the user landed on.
 |---|---|---|
 | `id` | int | Reel row ID, also used in thumbnail file names |
 | `session_id` | int | Session it belongs to |
-| `package` | string | Source app, e.g. `com.instagram.android` |
+| `package` | string | Source app: `com.instagram.android` or `com.google.android.youtube` (Shorts only) |
 | `reel_key` | string | Best-effort identity of the reel (creator + caption hash) |
 | `creator` | string or null | Creator handle as shown on screen |
 | `caption` | string or null | Caption text as shown on screen (may be truncated) |
 | `audio` | string or null | Audio / music label |
 | `media_type` | `VIDEO`, `IMAGE`, `CAROUSEL` or null | Kind of post (null in rows from before it was detected) |
-| `is_ad` | bool | Shown as an ad ("광고" / "Sponsored") |
+| `is_ad` | bool | An ad slot ("광고" / "스폰서" / "Sponsored") |
+| `paid_promotion` | bool | Creator content with a sponsorship or affiliate disclosure ("유료 광고 포함", "수수료 지급"). Not an ad slot: recorded and labeled like any reel |
 | `mode` | `LEARNING` or `AUTO` | Mode at the time the reel started |
 | `started_at_ms` | int | When the reel appeared |
 | `ended_at_ms` | int | When it was replaced, or the user left |

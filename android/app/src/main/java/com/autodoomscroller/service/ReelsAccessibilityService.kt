@@ -13,6 +13,7 @@ import com.autodoomscroller.adapter.FeedState
 import com.autodoomscroller.adapter.InstagramReelsAdapter
 import com.autodoomscroller.adapter.NodeTreeDumper
 import com.autodoomscroller.adapter.TargetAppAdapter
+import com.autodoomscroller.adapter.YouTubeShortsAdapter
 import com.autodoomscroller.autopilot.AutoPilot
 import com.autodoomscroller.session.SessionController
 import com.autodoomscroller.session.SessionMode
@@ -36,7 +37,7 @@ import kotlinx.coroutines.launch
 class ReelsAccessibilityService : AccessibilityService() {
 
     private val adapters: Map<String, TargetAppAdapter> =
-        listOf<TargetAppAdapter>(InstagramReelsAdapter()).associateBy { it.packageName }
+        listOf(InstagramReelsAdapter(), YouTubeShortsAdapter()).associateBy { it.packageName }
 
     // Separate handlers: frame timers are cancelled on every new reel, reads are not.
     private val readHandler = Handler(Looper.getMainLooper())
@@ -49,6 +50,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private var loopDetector = LoopDetector()
     private var showingOtherItem = false
     private var lastDiscoveryDumpAtMs = 0L
+    private var lastUnskippedAdSequence: Int? = null
     private var lastOtherAdSkipAtMs = 0L
     private var readScheduled = false
     private var lastReadAtMs = 0L
@@ -145,8 +147,13 @@ class ReelsAccessibilityService : AccessibilityService() {
     /** The ad label can render a moment after the reel, so this runs on every read. */
     private fun maybeSkipAd() {
         val reel = tracker.currentSnapshot ?: return
-        if (tracker.currentAutoSkipped || tracker.currentUndone) return
-        if (autoPilot.onAd(reel)) tracker.markAutoSkipped()
+        if (!reel.isAd || tracker.currentAutoSkipped || tracker.currentUndone) return
+        if (autoPilot.onAd(reel)) {
+            tracker.markAutoSkipped()
+        } else if (BuildConfig.DEBUG && tracker.currentSequence != lastUnskippedAdSequence) {
+            lastUnskippedAdSequence = tracker.currentSequence
+            Log.d(TAG, "ad not skipped (skip ads ${if (SessionController.adSkip.value) "on, cooling down" else "off"})")
+        }
     }
 
     private fun onNewReel(reel: ReelSnapshot) {
@@ -232,7 +239,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val TREE_DUMP_DELAY_MS = 2_000L
         const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
         const val DEBUG_DUMP_DIR = "debug-dumps"
-        val DISCOVERY_PACKAGES = setOf("com.google.android.youtube")
+        /** Apps to dump while writing a new adapter; empty when there is none in progress. */
+        val DISCOVERY_PACKAGES = emptySet<String>()
         const val DISCOVERY_DUMP_INTERVAL_MS = 3_000L
     }
 }

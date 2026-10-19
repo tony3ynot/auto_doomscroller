@@ -30,6 +30,7 @@ data class ReelEntity(
     /** Null for rows recorded before media types were detected (schema v2). */
     val mediaType: MediaType?,
     @ColumnInfo(defaultValue = "0") val isAd: Boolean,
+    @ColumnInfo(defaultValue = "0") val paidPromotion: Boolean,
     val mode: SessionMode,
     val startedAtMs: Long,
     val endedAtMs: Long,

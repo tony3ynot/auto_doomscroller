@@ -171,6 +171,7 @@ class ReelTracker(
                 TAG,
                 "${label ?: "-"} ${dwellMs}ms @${snapshot.creator} ${snapshot.mediaType}" +
                     (if (snapshot.isAd) " AD" else "") +
+                    (if (snapshot.paidPromotion) " PROMO" else "") +
                     (if (reel.revisit) " revisit" else "") +
                     " dur=${reel.durationMs ?: "?"}(${reel.durationSource ?: "-"}) max=${reel.maxPositionMs ?: "?"}" +
                     " est=${reel.loopEstimateMs ?: "?"}" +
@@ -197,6 +198,7 @@ class ReelTracker(
             audio = snapshot.audio,
             mediaType = snapshot.mediaType,
             isAd = snapshot.isAd,
+            paidPromotion = snapshot.paidPromotion,
             mode = reel.mode,
             startedAtMs = reel.startedAtMs,
             endedAtMs = endedAtMs,

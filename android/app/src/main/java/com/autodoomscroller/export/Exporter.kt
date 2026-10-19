@@ -52,6 +52,7 @@ object Exporter {
         .put("audio", audio ?: JSONObject.NULL)
         .put("media_type", mediaType?.name ?: JSONObject.NULL)
         .put("is_ad", isAd)
+        .put("paid_promotion", paidPromotion)
         .put("mode", mode.name)
         .put("started_at_ms", startedAtMs)
         .put("ended_at_ms", endedAtMs)

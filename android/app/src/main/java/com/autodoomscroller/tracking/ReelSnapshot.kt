@@ -26,6 +26,8 @@ data class ReelSnapshot(
     val feedIndex: Int? = null,
     /** Identifies the carousel slide on screen; a change means the user swiped. */
     val slideKey: Int? = null,
+    /** Creator content with a sponsorship/affiliate disclosure (not an ad slot). */
+    val paidPromotion: Boolean = false,
 ) {
     val key: String
         get() = "$packageName|$creator|${caption.orEmpty().hashCode()}"
@@ -55,5 +57,6 @@ data class ReelSnapshot(
         commentsOpen = newer.commentsOpen,
         feedIndex = feedIndex ?: newer.feedIndex,
         slideKey = newer.slideKey ?: slideKey,
+        paidPromotion = paidPromotion || newer.paidPromotion,
     )
 }

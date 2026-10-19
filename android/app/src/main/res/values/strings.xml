@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">auto_doomscroller</string>
     <string name="accessibility_service_label">auto_doomscroller</string>
-    <string name="accessibility_service_description">Detects when you are watching Instagram Reels, records how long you watch each reel, and can swipe to the next reel for you in Auto mode. It only reads the screen of supported apps, everything stays on this device, and nothing is uploaded.</string>
+    <string name="accessibility_service_description">Detects when you are watching Instagram Reels or YouTube Shorts, records how long you watch each one, and can swipe to the next reel for you in Auto mode. It only reads the screen of supported apps, everything stays on this device, and nothing is uploaded.</string>
 </resources>

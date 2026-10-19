@@ -1,5 +1,6 @@
 package com.autodoomscroller.adapter
 
+import android.graphics.Rect
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 import java.io.File
@@ -45,9 +46,12 @@ object NodeTreeDumper {
         if (node.isClickable) append(" [clickable]")
         if (node.isScrollable) append(" [scrollable]")
         if (node.isSelected) append(" [selected]")
+        if (node.isCheckable) append(if (node.isCheckedCompat) " [checked]" else " [unchecked]")
         if (!node.isVisibleToUser) append(" [offscreen]")
         node.rangeInfo?.let { append(" range=${it.current}/${it.min}..${it.max}") }
         node.collectionInfo?.let { append(" collection=${it.rowCount}x${it.columnCount}") }
         node.collectionItemInfo?.let { append(" item=${it.rowIndex},${it.columnIndex}") }
+        val bounds = Rect().also(node::getBoundsInScreen)
+        append(" @${bounds.left},${bounds.top}-${bounds.right},${bounds.bottom}")
     }
 }

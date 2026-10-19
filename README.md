@@ -1,6 +1,6 @@
 # auto_doomscroller
 
-**An on-device model that learns which Reels you'd skip, and skips them for you.**
+**An on-device model that learns which Reels and Shorts you'd skip, and skips them for you.**
 
 auto_doomscroller watches *how* you scroll: which reels you swipe past in a second, which
 ones you watch to the end, which ones you like. From that it learns your taste, and in Auto
@@ -9,8 +9,8 @@ mode it swipes past the reels you would have skipped anyway.
 It doesn't try to work out *why* you watch something. Funny clips, cats, cooking, whatever:
 it only predicts one thing, **will you skip this reel?**
 
-> Status: early development. Android app for Instagram Reels first, then a browser
-> extension.
+> Status: early development. Android app for Instagram Reels and YouTube Shorts, then a
+> browser extension. Long-form YouTube videos are ignored.
 
 ## How it works
 
