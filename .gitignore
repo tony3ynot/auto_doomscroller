@@ -19,9 +19,9 @@ __pycache__/
 *.egg-info/
 uv.lock
 
-# Personal data and model binaries never go into git
-data/
-exports/
+# Personal data and model binaries never go into git (anchored: com/autodoomscroller/data is code)
+/data/
+/exports/
 ml/data/
 ml/models/
 *.tflite
@@ -29,5 +29,5 @@ ml/models/
 
 .DS_Store
 
-# Node-tree dumps contain captions and creator names from your own feed
-reels_dump*.txt
+# Debug logs and node dumps at the repo root contain captions and creator names from your own feed
+/*.txt
