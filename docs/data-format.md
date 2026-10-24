@@ -48,6 +48,7 @@ One line per reel the user landed on.
 | `mode` | `LEARNING` or `AUTO` | Mode at the time the reel started |
 | `started_at_ms` | int | When the reel appeared |
 | `ended_at_ms` | int | When it was replaced, or the user left |
+| `paused_ms` | int | Time spent away from the feed mid-reel (notification shade, quick trip to DMs) before coming back to the same reel within 30 s. Dwell = `ended_at_ms` − `started_at_ms` − `paused_ms` |
 | `moved_to_next` | bool | Ended by swiping to another reel (false: left the app or stopped) |
 | `looped` | bool | Playback wrapped around to the start at least once |
 | `duration_ms` | int or null | Length of the video, if known |
@@ -62,7 +63,7 @@ One line per reel the user landed on.
 | `comment_count` | int or null | Comment count shown on the reel |
 | `auto_skipped` | bool | Auto mode swiped past it |
 | `undone` | bool | The user came back to it right after Auto mode skipped it |
-| `revisit` | bool | Seen earlier in the session (the user scrolled back to it) |
+| `revisit` | bool | The user scrolled back to it: same feed position and creator as an earlier reel |
 | `feed_index` | int or null | Position in the feed as reported by the app; restarts when the feed refreshes |
 | `label` | `SKIP`, `WATCH` or null | Label computed on device (see below) |
 | `frame_count` | int | Frames captured for this reel |

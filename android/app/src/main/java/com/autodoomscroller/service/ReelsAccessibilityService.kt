@@ -75,8 +75,31 @@ class ReelsAccessibilityService : AccessibilityService() {
             scheduleRead()
             return
         }
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) stopTracking()
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) scheduleLeaveCheck()
         if (BuildConfig.DEBUG && packageName in DISCOVERY_PACKAGES) maybeDumpForDiscovery()
+    }
+
+    /**
+     * Another app's window changed. Heads-up notifications, the volume panel and the like do
+     * this without taking the user away, so only pause if a target app is no longer in front.
+     */
+    private fun scheduleLeaveCheck() {
+        readHandler.removeCallbacks(leaveCheck)
+        readHandler.postDelayed(leaveCheck, LEAVE_CHECK_DELAY_MS)
+    }
+
+    private val leaveCheck = Runnable {
+        if (rootInActiveWindow?.packageName?.toString() in adapters) scheduleRead() else pauseTracking()
+    }
+
+    private val pauseExpiry = Runnable { tracker.expirePause() }
+
+    private fun pauseTracking() {
+        if (tracker.currentSnapshot == null || tracker.currentPaused) return
+        cancelFrames()
+        tracker.pause()
+        readHandler.removeCallbacks(pauseExpiry)
+        readHandler.postDelayed(pauseExpiry, ReelTracker.RESUME_WINDOW_MS + PAUSE_EXPIRY_SLACK_MS)
     }
 
     /** Debug builds periodically dump apps that don't have an adapter yet, to write one. */
@@ -121,7 +144,7 @@ class ReelsAccessibilityService : AccessibilityService() {
                 maybeSkipAd()
             }
             is FeedState.OtherItem -> onOtherItem(state, root)
-            FeedState.NotOnFeed -> stopTracking()
+            FeedState.NotOnFeed -> pauseTracking()
             FeedState.Unknown -> Unit
         }
     }
@@ -245,6 +268,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val LOOP_SAMPLING_MAX_MS = 120_000L
         const val VALIDATION_SAMPLE_EVERY = 4
         const val TREE_DUMP_DELAY_MS = 2_000L
+        const val LEAVE_CHECK_DELAY_MS = 500L
+        const val PAUSE_EXPIRY_SLACK_MS = 500L
         const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
         const val DEBUG_DUMP_DIR = "debug-dumps"
         /** Apps to dump while writing a new adapter; empty when there is none in progress. */

@@ -34,6 +34,8 @@ data class ReelEntity(
     val mode: SessionMode,
     val startedAtMs: Long,
     val endedAtMs: Long,
+    /** Time the user spent away from the feed mid-reel; dwell = endedAtMs - startedAtMs - pausedMs. */
+    @ColumnInfo(defaultValue = "0") val pausedMs: Long,
     val movedToNext: Boolean,
     val looped: Boolean,
     val durationMs: Long?,

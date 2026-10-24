@@ -8,12 +8,14 @@ import pandas as pd
 
 
 def load_export(export_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return ``(sessions, reels)``. ``reels`` gets an extra ``dwell_ms`` column."""
+    """Return ``(sessions, reels)``. ``reels`` gets an extra ``dwell_ms`` column (time on screen,
+    excluding time away from the feed mid-reel)."""
     export_dir = Path(export_dir)
     sessions = pd.read_json(export_dir / "sessions.jsonl", lines=True)
     reels = pd.read_json(export_dir / "reels.jsonl", lines=True)
     if not reels.empty:
-        reels["dwell_ms"] = reels["ended_at_ms"] - reels["started_at_ms"]
+        paused = reels["paused_ms"].fillna(0) if "paused_ms" in reels else 0
+        reels["dwell_ms"] = reels["ended_at_ms"] - reels["started_at_ms"] - paused
     return sessions, reels
 
 

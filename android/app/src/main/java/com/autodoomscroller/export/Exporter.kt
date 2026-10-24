@@ -56,6 +56,7 @@ object Exporter {
         .put("mode", mode.name)
         .put("started_at_ms", startedAtMs)
         .put("ended_at_ms", endedAtMs)
+        .put("paused_ms", pausedMs)
         .put("moved_to_next", movedToNext)
         .put("looped", looped)
         .put("duration_ms", durationMs ?: JSONObject.NULL)
