@@ -57,11 +57,12 @@ def _merge(first: dict, second: dict, gap_ms: int) -> dict:
     merged["ended_at_ms"] = second["ended_at_ms"]
     merged["paused_ms"] = first["paused_ms"] + gap_ms + second["paused_ms"]
     merged["moved_to_next"] = second["moved_to_next"]
-    # Button states as of the end of the viewing.
-    for key in ("liked", "saved", "like_count", "comment_count"):
+    for key in ("like_count", "comment_count"):
         if key in second and _known(second[key]):
             merged[key] = second[key]
-    for key in ("looped", "opened_comments", "is_ad", "paid_promotion", "auto_skipped", "undone"):
+    # A part where the button couldn't be read is stored as False, so keep a like/save seen in
+    # either part; un-liking within one viewing is rare.
+    for key in ("liked", "saved", "looped", "opened_comments", "is_ad", "paid_promotion", "auto_skipped", "undone"):
         if key in first:
             merged[key] = bool(first[key]) or bool(second.get(key, False))
     for key in ("caption", "audio", "loop_estimate_ms"):
