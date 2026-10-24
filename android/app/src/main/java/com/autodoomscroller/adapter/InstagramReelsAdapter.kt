@@ -53,6 +53,8 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         // Other tabs (DMs, profile) keep the Reels pager alive off screen, so visibility matters.
         val pager = root.findById(PAGER).firstOrNull { it.isVisibleToUser }
         if (pager == null) {
+            // The comment sheet is a separate window: the active window then has no pager.
+            if (isCommentSheet(root)) return FeedState.CommentsOpen
             cache = null
             return FeedState.NotOnFeed
         }
@@ -112,6 +114,18 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         listOfNotNull(node.text, node.contentDescription).any { it.toString().trim() in AD_LABELS } ||
             node.viewIdResourceName?.substringAfter(":id/")?.let { "_ads" in it || it.startsWith("ads_") } == true
     } != null
+
+    /**
+     * The comment sheet's views come from another resource package, so their full IDs don't
+     * start with "com.instagram.android:id/" and findAccessibilityNodeInfosByViewId misses them.
+     * Match on the ID's name instead.
+     */
+    override fun isCommentsWindow(root: AccessibilityNodeInfo): Boolean = isCommentSheet(root)
+
+    private fun isCommentSheet(root: AccessibilityNodeInfo): Boolean =
+        root.firstDescendant(maxDepth = COMMENT_SHEET_MAX_DEPTH) { node ->
+            node.viewIdResourceName?.substringAfter(":id/") in COMMENT_SHEET_IDS
+        } != null
 
     private fun snapshotOf(entry: PageCache): ReelSnapshot {
         val details = checkNotNull(entry.details)
@@ -205,6 +219,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         findAccessibilityNodeInfosByViewId("$PACKAGE:id/$id")
 
     private fun AccessibilityNodeInfo.firstDescendant(
+        maxDepth: Int = MAX_DEPTH,
         predicate: (AccessibilityNodeInfo) -> Boolean,
     ): AccessibilityNodeInfo? {
         val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
@@ -212,7 +227,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         while (queue.isNotEmpty()) {
             val (node, depth) = queue.removeFirst()
             if (node !== this && predicate(node)) return node
-            if (depth >= MAX_DEPTH) continue
+            if (depth >= maxDepth) continue
             for (i in 0 until node.childCount) node.getChild(i)?.let { queue.add(it to depth + 1) }
         }
         return null
@@ -229,6 +244,10 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         const val COMMENT_COUNT = "comment_count"
         const val SAVE_BUTTON = "save_button"
         const val COMMENT_INPUT = "layout_comment_thread_edittext_multiline"
+        val COMMENT_SHEET_IDS = setOf(COMMENT_INPUT, "comment_composer_parent_updated")
+
+        /** The composer sits 3 levels below the sheet's root; stay shallow on the feed window. */
+        const val COMMENT_SHEET_MAX_DEPTH = 5
         const val SCRUBBER = "scrubber"
         const val CAROUSEL = "clips_carousel_viewpager"
         const val CAROUSEL_IMAGE = "clips_carousel_image_media_content"

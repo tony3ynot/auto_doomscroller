@@ -29,18 +29,20 @@ object NodeTreeDumper {
 
     private fun render(root: AccessibilityNodeInfo): List<String> = buildList {
         add("---- ${root.packageName} ----")
+        val ownPrefix = "${root.packageName}:id/"
         fun visit(node: AccessibilityNodeInfo, depth: Int) {
             if (depth > MAX_DEPTH) return
-            add(describe(node, depth))
+            add(describe(node, depth, ownPrefix))
             for (i in 0 until node.childCount) node.getChild(i)?.let { visit(it, depth + 1) }
         }
         visit(root, 0)
     }
 
-    private fun describe(node: AccessibilityNodeInfo, depth: Int) = buildString {
+    /** IDs from the app's own resource package are shortened; others are shown in full. */
+    private fun describe(node: AccessibilityNodeInfo, depth: Int, ownPrefix: String) = buildString {
         append("  ".repeat(depth))
         append(node.className?.toString()?.substringAfterLast('.'))
-        node.viewIdResourceName?.let { append(" id=").append(it.substringAfter(":id/")) }
+        node.viewIdResourceName?.let { append(" id=").append(it.removePrefix(ownPrefix)) }
         node.text?.let { append(" text=\"").append(it.take(60)).append('"') }
         node.contentDescription?.let { append(" desc=\"").append(it.take(60)).append('"') }
         if (node.isClickable) append(" [clickable]")

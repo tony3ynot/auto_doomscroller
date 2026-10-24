@@ -190,6 +190,20 @@ class ReelTracker(
         current?.undone = true
     }
 
+    /** Comments of the current reel are open: engagement, and time that counts as dwell. */
+    fun onCommentsOpen() {
+        val active = current ?: return
+        active.pausedAtMs?.let { pausedAt ->
+            if (clock() - pausedAt <= RESUME_WINDOW_MS) {
+                active.pausedTotalMs += clock() - pausedAt
+                active.pausedAtMs = null
+            } else {
+                return
+            }
+        }
+        active.openedComments = true
+    }
+
     /** The user left the feed; see the class comment. */
     fun pause() {
         val active = current ?: return

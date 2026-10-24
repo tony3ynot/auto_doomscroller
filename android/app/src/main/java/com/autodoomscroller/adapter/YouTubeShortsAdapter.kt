@@ -2,6 +2,8 @@ package com.autodoomscroller.adapter
 
 import android.graphics.Rect
 import android.os.SystemClock
+import android.util.Log
+import com.autodoomscroller.BuildConfig
 import android.view.accessibility.AccessibilityNodeInfo
 import com.autodoomscroller.tracking.MediaType
 import com.autodoomscroller.tracking.ReelSnapshot
@@ -37,10 +39,12 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
         var saved: Boolean? = null
         var positionMs: Long? = null
         var durationMs: Long? = null
+        var commentsOpen = false
         var lastStateAtMs = 0L
     }
 
     private var cache: PageCache? = null
+    private var lastPanelSeen = false
 
     override fun read(root: AccessibilityNodeInfo): FeedState {
         val recycler = root.findById(RECYCLER).firstOrNull { it.isVisibleToUser }
@@ -90,12 +94,16 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
                 commentCount = entry.commentCount,
                 positionMs = entry.positionMs,
                 durationMs = entry.durationMs,
-                commentsOpen = false,
+                commentsOpen = entry.commentsOpen,
                 feedIndex = index,
                 paidPromotion = entry.paidPromotion,
             ),
         )
     }
+
+    override fun isCommentsWindow(root: AccessibilityNodeInfo): Boolean =
+        root.findById(ENGAGEMENT_PANEL).any { it.isVisibleToUser } &&
+            root.findById(PANEL_TITLE).any { it.text?.toString()?.trim() in COMMENT_TITLES }
 
     /** One walk over the page; later reads only fill in what earlier ones missed. */
     private fun readDetails(entry: PageCache, page: AccessibilityNodeInfo) {
@@ -150,6 +158,15 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
     private fun readState(root: AccessibilityNodeInfo, entry: PageCache, sinceFirstMs: Long) {
         entry.likeButton?.takeIf { it.refresh() }?.let { entry.liked = it.isCheckedCompat }
         entry.saveButton?.takeIf { it.refresh() }?.let { entry.saved = it.isCheckedCompat }
+        // Comments open in an engagement panel over the shrunken player; the same panel also
+        // shows descriptions and remixes, so check its title.
+        val panels = root.findById(ENGAGEMENT_PANEL)
+        val titles = root.findById(PANEL_TITLE).map { it.text?.toString()?.trim() }
+        entry.commentsOpen = panels.any { it.isVisibleToUser } && titles.any { it in COMMENT_TITLES }
+        if (BuildConfig.DEBUG && (panels.isNotEmpty() || titles.isNotEmpty()) != lastPanelSeen) {
+            lastPanelSeen = panels.isNotEmpty() || titles.isNotEmpty()
+            Log.d(TAG, "engagement panels=${panels.size} visible=${panels.count { it.isVisibleToUser }} titles=$titles")
+        }
         // The time bar only appears now and then. Right after a swipe it can still show the
         // previous short, so a position further than this page could have played is ignored.
         val timeBar = root.findById(TIME_BAR).firstOrNull() ?: return
@@ -174,10 +191,14 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
     private fun AccessibilityNodeInfo.bounds(): Rect = Rect().also(::getBoundsInScreen)
 
     private companion object {
+        const val TAG = "YouTubeShorts"
         const val PACKAGE = "com.google.android.youtube"
         const val RECYCLER = "reel_recycler"
         const val TIME_BAR = "reel_time_bar"
         const val LIVE_PLAYER = "immersive_live_player"
+        const val ENGAGEMENT_PANEL = "app_engagement_panel"
+        const val PANEL_TITLE = "modern_title"
+        val COMMENT_TITLES = setOf("댓글", "Comments")
         const val LIKE_MARKER = "좋아요 표시"
         const val SAVE_LABEL = "저장"
         const val COMMENTS_PREFIX = "댓글"

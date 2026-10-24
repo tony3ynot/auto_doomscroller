@@ -52,6 +52,12 @@ class ReelsAccessibilityService : AccessibilityService() {
     private var showingOtherItem = false
     private var lastDiscoveryDumpAtMs = 0L
     private var lastUnskippedAdSequence: Int? = null
+    private var windowDumpsLeft = MAX_WINDOW_DUMPS
+    private var lastCommentWindowCheckAtMs = 0L
+    private var lastCommentWindowOpen = false
+    private var lastAppWindowCount = 0
+    private var lastStateName: String? = null
+    private var lastSnapshotComments: Boolean? = null
     private var lastOtherAdSkipAtMs = 0L
     private var readScheduled = false
     private var lastReadAtMs = 0L
@@ -132,21 +138,80 @@ class ReelsAccessibilityService : AccessibilityService() {
         val root = rootInActiveWindow ?: return
         val adapter = adapters[root.packageName?.toString()] ?: return
 
-        val state = adapter.read(root)
+        var state = adapter.read(root)
+        if (state == FeedState.NotOnFeed) state = readOtherWindows(adapter, root) ?: state
         if (BuildConfig.DEBUG) {
             val tookMs = SystemClock.uptimeMillis() - lastReadAtMs
             if (tookMs > SLOW_READ_MS) Log.d(TAG, "slow read: ${tookMs}ms")
         }
+        if (BuildConfig.DEBUG) logTransitions(state)
         when (state) {
             is FeedState.OnReel -> {
                 showingOtherItem = false
                 if (tracker.onReelObserved(state.snapshot, mode)) onNewReel(state.snapshot)
                 maybeSkipAd()
+                checkCommentWindows(adapter, root)
             }
             is FeedState.OtherItem -> onOtherItem(state, root)
+            FeedState.CommentsOpen -> tracker.onCommentsOpen()
             FeedState.NotOnFeed -> pauseTracking()
-            FeedState.Unknown -> Unit
+            FeedState.Unknown -> checkCommentWindows(adapter, root)
         }
+    }
+
+    /**
+     * Opening comments hides or shrinks the feed (reads come back Unknown), and Instagram shows
+     * them in a separate window that rarely becomes the active one. So while on or around the
+     * feed, ask the adapter once a second whether any of the app's windows shows comments.
+     */
+    private fun checkCommentWindows(adapter: TargetAppAdapter, active: AccessibilityNodeInfo) {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastCommentWindowCheckAtMs < COMMENT_WINDOW_CHECK_MS) return
+        lastCommentWindowCheckAtMs = now
+        val appWindows = (listOf(active) + windows.mapNotNull { it.root }.filter { it != active })
+            .filter { it.packageName?.toString() == adapter.packageName }
+        val open = appWindows.any { adapter.isCommentsWindow(it) }
+        if (BuildConfig.DEBUG && (open != lastCommentWindowOpen || appWindows.size != lastAppWindowCount)) {
+            Log.d(TAG, "app windows: ${appWindows.size}, comment window open: $open")
+        }
+        lastCommentWindowOpen = open
+        lastAppWindowCount = appWindows.size
+        if (open) tracker.onCommentsOpen()
+    }
+
+    private fun logTransitions(state: FeedState) {
+        val name = state::class.simpleName
+        if (name != lastStateName) Log.d(TAG, "feed state: $lastStateName -> $name")
+        lastStateName = name
+        val comments = (state as? FeedState.OnReel)?.snapshot?.commentsOpen
+        if (comments != null && comments != lastSnapshotComments) Log.d(TAG, "reel comments open: $comments")
+        if (comments != null) lastSnapshotComments = comments
+    }
+
+    /**
+     * The active window can be a sheet or dialog on top of the feed (e.g. comments), so before
+     * treating the user as gone, look at the app's other windows: comments open anywhere win,
+     * then a feed that is still visible.
+     */
+    private fun readOtherWindows(adapter: TargetAppAdapter, active: AccessibilityNodeInfo): FeedState? {
+        val others = windows.mapNotNull { window -> window.root?.let { window to it } }
+            .filter { (_, root) -> root.packageName?.toString() == adapter.packageName && root != active }
+        val states = others.map { (_, root) -> adapter.read(root) }
+        if (BuildConfig.DEBUG && windowDumpsLeft > 0) {
+            windowDumpsLeft--
+            Log.d(TAG, "not on feed in the active window; app windows: " + others.zip(states).joinToString { (pair, state) ->
+                val (window, _) = pair
+                "[type=${window.type} active=${window.isActive} focused=${window.isFocused} title=${window.title} -> ${state::class.simpleName}]"
+            })
+            val dir = getExternalFilesDir(DEBUG_DUMP_DIR)
+            NodeTreeDumper.dump(active)
+            dir?.let { NodeTreeDumper.save(active, it, "not-on-feed-active") }
+            others.forEachIndexed { i, (_, root) ->
+                NodeTreeDumper.dump(root)
+                dir?.let { NodeTreeDumper.save(root, it, "not-on-feed-window$i") }
+            }
+        }
+        return states.firstOrNull { it == FeedState.CommentsOpen } ?: states.firstOrNull { it is FeedState.OnReel }
     }
 
     private fun onOtherItem(state: FeedState.OtherItem, root: AccessibilityNodeInfo) {
@@ -269,6 +334,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val VALIDATION_SAMPLE_EVERY = 4
         const val TREE_DUMP_DELAY_MS = 2_000L
         const val LEAVE_CHECK_DELAY_MS = 500L
+        const val MAX_WINDOW_DUMPS = 3
+        const val COMMENT_WINDOW_CHECK_MS = 1_000L
         const val PAUSE_EXPIRY_SLACK_MS = 500L
         const val OTHER_AD_SKIP_PAUSE_MS = 10_000L
         const val DEBUG_DUMP_DIR = "debug-dumps"
