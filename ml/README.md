@@ -24,6 +24,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | Module | Purpose |
 |---|---|
 | `autodoom.data` | Load `sessions.jsonl` / `reels.jsonl` and thumbnails |
+| `autodoom.clean` | Repairs exports from before schema v8 (split viewings, loose revisit flags) |
 | `autodoom.labels` | The SKIP / WATCH rule, kept in sync with `ReelLabeler.kt` |
 | `autodoom.split` | Time-based train/test split |
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
@@ -34,12 +35,14 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 
 ```python
 from autodoom.data import load_export
+from autodoom.clean import clean
 from autodoom.labels import relabel
 from autodoom.split import temporal_split
 from autodoom.baselines import creator_history_scores
 from autodoom.metrics import skip_auc, coverage_at_precision
 
-sessions, reels = load_export("data/exports/20261101-210000")
+sessions, reels = load_export("data/20261101-210000")
+reels = clean(reels)  # only needed for exports recorded before schema v8; harmless otherwise
 reels["label"] = relabel(reels)
 train, test = temporal_split(reels, test_days=2)
 
