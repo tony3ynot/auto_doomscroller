@@ -82,6 +82,9 @@ class ReelTracker(
     val currentLoopEstimated: Boolean
         get() = current?.loopEstimateMs != null
 
+    val currentHasFrames: Boolean
+        get() = current?.frames?.isNotEmpty() == true
+
     /** The current reel has no full-size frame yet; the first kept frame provides it. */
     val currentNeedsHiResFrame: Boolean
         get() = current?.let { it.hiResFrame == null } == true

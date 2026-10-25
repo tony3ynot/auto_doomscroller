@@ -105,7 +105,8 @@ Saved only when research mode is on, JPEG:
 
 - `<reel_id>_<frame_index>.jpg`: 224 px wide. The first is taken as soon as the reel has
   stopped moving after the swipe (`first_frame_ms`), the others about 0.8 s and 1.3 s into the
-  reel. A frame is dropped if the reel was moving when it was taken. The encoder input
+  reel. A frame is dropped if the reel was moving when it was taken, and an all-black first
+  frame (the video hadn't drawn yet) is taken again a moment later. The encoder input
   (224×224 center crop) is produced from these.
 - `<reel_id>_hires.jpg`: the first frame at 540 px wide, so on-screen text (subtitles, hook
   text) is readable for OCR when a decision is due.

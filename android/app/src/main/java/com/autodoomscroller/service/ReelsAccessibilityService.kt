@@ -296,7 +296,9 @@ class ReelsAccessibilityService : AccessibilityService() {
     /**
      * [keep]: store a thumbnail with the reel; otherwise the frame only feeds loop detection.
      * The first kept frame is also kept at capture size, readable enough for OCR. A frame is
-     * dropped if the reel was moving when it was requested or is by the time it arrives.
+     * dropped if the reel was moving when it was requested or is by the time it arrives. The
+     * first reel after the app opens can settle before its video has drawn anything, so a flat
+     * (all black) first frame is taken again a moment later.
      */
     private fun captureFrame(sequence: Int, adapter: TargetAppAdapter, keep: Boolean) {
         val bounds = mediaBounds ?: return
@@ -313,7 +315,14 @@ class ReelsAccessibilityService : AccessibilityService() {
                 null
             }
             val thumbnail = capture.scaledToWidth(ScreenCapturer.THUMBNAIL_WIDTH)
-            loopDetector.add(Fingerprint.of(thumbnail), elapsedMs)?.let(tracker::onLoopEstimated)
+            val fingerprint = Fingerprint.of(thumbnail)
+            if (keep && !tracker.currentHasFrames && Fingerprint.isFlat(fingerprint) && elapsedMs < BLANK_RETRY_UNTIL_MS) {
+                thumbnail.recycle()
+                hiRes?.recycle()
+                frameHandler.postDelayed({ captureFrame(sequence, adapter, keep = true) }, BLANK_RETRY_DELAY_MS)
+                return@capture
+            }
+            loopDetector.add(fingerprint, elapsedMs)?.let(tracker::onLoopEstimated)
             if (keep) tracker.addFrame(sequence, thumbnail, elapsedMs) else thumbnail.recycle()
             hiRes?.let { tracker.setHiResFrame(sequence, it) }
         }
@@ -370,6 +379,8 @@ class ReelsAccessibilityService : AccessibilityService() {
         val FRAME_OFFSETS_MS = longArrayOf(800, 1_300)
         const val SETTLE_POLL_MS = 50L
         const val SETTLE_TIMEOUT_MS = 1_500L
+        const val BLANK_RETRY_DELAY_MS = 100L
+        const val BLANK_RETRY_UNTIL_MS = 1_000L
         const val LOOP_SAMPLING_START_MS = 2_300L
         const val LOOP_SAMPLING_INTERVAL_MS = 1_000L
         const val LOOP_SAMPLING_MAX_MS = 120_000L
