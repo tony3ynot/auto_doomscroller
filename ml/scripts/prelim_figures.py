@@ -1,8 +1,9 @@
 """Preliminary-results figures and numbers from one export.
 
-    python ml/scripts/prelim_figures.py data/<export> --out data/figures
+    python ml/scripts/prelim_figures.py data/<export> --out results/<date>-prelim
 
-Writes dwell_ecdf.pdf/png, outcomes.pdf/png and summary.md. Sized for one ACM column.
+Writes dwell_ecdf.pdf/png, outcomes.pdf/png, summary.md and run.json. Sized for one ACM column.
+Only aggregate numbers are written; nothing about individual reels or creators.
 """
 
 from __future__ import annotations
@@ -10,9 +11,6 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -20,25 +18,15 @@ import pandas as pd
 from autodoom.baselines import creator_history_scores
 from autodoom.clean import clean
 from autodoom.data import load_export
+from autodoom.figures import AQUA, BLUE, COLUMN_WIDTH_IN, GRID, INK, INK_2, NEUTRAL, ORANGE, SURFACE, use_style
 from autodoom.labels import relabel
 from autodoom.metrics import skip_auc
+from autodoom.report import write_run
 from autodoom.split import temporal_split
 
-# Reference palette (dataviz skill), light mode; validated: blue, orange, aqua.
-BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
-NEUTRAL = "#c3c2b7"  # "no label": recessive, not a series hue
-INK, INK_2, MUTED = "#0b0b0b", "#52514e", "#898781"
-GRID, AXIS, SURFACE = "#e1e0d9", "#c3c2b7", "#ffffff"
+use_style()
 APPS = {"com.instagram.android": "Instagram Reels", "com.google.android.youtube": "YouTube Shorts"}
 APP_COLOR = {"Instagram Reels": BLUE, "YouTube Shorts": ORANGE}
-COLUMN_WIDTH_IN = 3.33
-
-plt.rcParams.update({
-    "font.family": "sans-serif", "font.size": 7, "axes.labelsize": 7, "xtick.labelsize": 6.5,
-    "ytick.labelsize": 6.5, "legend.fontsize": 6.5, "axes.edgecolor": AXIS, "axes.labelcolor": INK_2,
-    "xtick.color": MUTED, "ytick.color": MUTED, "axes.linewidth": 0.6, "xtick.major.width": 0.6,
-    "ytick.major.width": 0.6, "savefig.facecolor": SURFACE, "figure.facecolor": SURFACE,
-})
 
 
 def load(export: Path) -> pd.DataFrame:
@@ -165,13 +153,14 @@ def summary(reels: pd.DataFrame, shares: dict[str, float], table: pd.DataFrame, 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("export", type=Path)
-    parser.add_argument("--out", type=Path, default=Path("data/figures"))
+    parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     reels = load(args.export)
     shares = dwell_ecdf(reels, args.out)
     table = outcomes(reels, args.out)
     print(summary(reels, shares, table, args.out))
+    write_run(args.out, "ml/scripts/prelim_figures.py", args.export, reels=len(reels))
 
 
 if __name__ == "__main__":
