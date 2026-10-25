@@ -1,0 +1,15 @@
+{
+  "script": "ml/scripts/frame_text.py",
+  "git_commit": "d473c9c",
+  "export": "20261025-203102",
+  "collection": [
+    "2026-10-20",
+    "2026-10-25"
+  ],
+  "reels": 1833,
+  "evaluated_first_frame": 933,
+  "evaluated_sharp_frame": 642,
+  "k": 20,
+  "text_share_first": 0.7609860664523044,
+  "text_share_sharp": 0.8426791277258567
+}

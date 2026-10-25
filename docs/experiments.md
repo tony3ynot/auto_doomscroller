@@ -73,3 +73,61 @@ What it changes
   the 540 px copy from that first frame, so OCR becomes usable at decision time.
 - Next experiment: text on the frame (OCR → e5 similarity). The hook text burned into many
   reels is what gets read in the first second, and CLIP reads little Korean.
+
+## 2026-10-25 · Frame capture fixed in the app
+
+Commits `a71e38f`, `fc24e4c`. Follows from the first skip model's look at the first frames.
+
+- A reel becomes current while the swipe that brings it in is still finishing. The service now
+  waits until the page fills the feed (on the test phone that happens 0–7 ms after the reel is
+  detected) and takes the first frame right then, 60–140 ms into the reel instead of 300 ms.
+  Every frame is cropped to the reel's area, and a frame is dropped if the reel moved while it
+  was taken.
+- At the top of the Instagram home the stories tray pushes the reel down rather than covering
+  it, so cropping to the reel leaves the tray out.
+- The 540 px copy now comes from the first frame, so OCR can run when a decision is due.
+  Exports record `first_frame_ms` (schema v9).
+- Checked on 7 new reels (4 Instagram, 3 YouTube): all cropped correctly, none mid-swipe. One
+  first frame was black: the first reel after opening Instagram, captured before its video had
+  drawn. A flat first frame is now retaken a moment later.
+- Rows recorded before this have full-screen frames and must not be mixed with new rows in one
+  embedding experiment ([data format](data-format.md#thumbnails)).
+
+## 2026-10-25 · Text on the frame
+
+Result: [results/2026-10-25-frame-text](../results/2026-10-25-frame-text/summary.md) · script: `ml/scripts/frame_text.py`
+
+Question: does the text burned into a reel (hook text, subtitles) predict a first-impression
+skip, on top of Taste?
+
+Setup
+- Newer export: 10-20 – 10-25 (6 days), 933 labeled first impressions; folds test on 10-22
+  through 10-25.
+- OCR: EasyOCR (Korean + English), standing in for ML Kit on the phone. App UI is removed by
+  position (top tab bar, right-hand buttons, author and caption block at the bottom) and by a
+  short list of UI words, bare counts and the creator's name. OCR misspells the tab labels, so
+  position does most of the work.
+- Frame text similarity: skip share among the 20 most similar earlier labeled reels by the e5
+  embedding of that text.
+- A: the 224 px first frame, upscaled 2×, on all first impressions (text found on 76%).
+- B: reels still on screen at 1.3 s, which have a 540 px frame (642 reels, 17% SKIP), to see
+  how much OCR quality matters.
+
+Results
+- Taste on this data: AUC 0.62 (95% CI 0.57–0.67).
+- A: frame text alone scores 0.58, the best single content signal on the first frame so far
+  (the frame image scored 0.53 and the caption 0.55 in the first pass). Added to Taste it
+  doesn't help: 0.61.
+- B: OCR quality matters. On the same reels, text from the 540 px frame scores 0.63 alone,
+  text from the 224 px frame 0.46. Added to Taste, the 540 px text gives a within-session AUC
+  of 0.67 against 0.64 and a per-day AUC of 0.66 against 0.67. B has only about 110 skips, so
+  the intervals are far too wide to tell.
+- OCR offline costs about 2 s per frame on one CPU thread. On the phone it would be ML Kit,
+  still to be measured.
+
+What it changes
+- Text from the 224 px frame is not worth adding.
+- The real test needs a sharp first frame, which the app records since `a71e38f`. Re-run B's
+  comparison on all first impressions once a few hundred labeled reels have been recorded that
+  way.
+- Taste (0.62) stays the model to beat.
