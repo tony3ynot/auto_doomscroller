@@ -1,0 +1,435 @@
+{
+  "Majority": {
+    "features": [],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.5,
+    "coverage_at_80": 0.0
+  },
+  "Creator history": {
+    "features": [
+      "creator_skip_rate"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6136262265834077,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5684374999999999,
+        "coverage_at_80": 0.13
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.5886976477337923,
+        "coverage_at_80": 0.24096385542168675
+      }
+    ],
+    "auc": 0.5902537914390665,
+    "coverage_at_80": 0.12365461847389558,
+    "auc_ci95": [
+      0.5415087800451307,
+      0.6390004169931683
+    ],
+    "session_auc": 0.5176893424964215,
+    "session_auc_ci95": [
+      0.4585983849709401,
+      0.5710153657109008
+    ]
+  },
+  "Frame sim. (MobileNetV3)": {
+    "features": [
+      "frame_mobilenet"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6037020517395183,
+        "coverage_at_80": 0.07894736842105263
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.4995312499999999,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.4975903614457831,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.5336078877284337,
+    "coverage_at_80": 0.02631578947368421,
+    "auc_ci95": [
+      0.48234209987225496,
+      0.5841091410795757
+    ],
+    "session_auc": 0.5032873157749052,
+    "session_auc_ci95": [
+      0.44418749814145053,
+      0.5722634693333387
+    ]
+  },
+  "Frame sim. (CLIP)": {
+    "features": [
+      "frame_clip"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.60950044603033,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5021093750000001,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.4951807228915663,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.5355968479739655,
+    "coverage_at_80": 0.0,
+    "auc_ci95": [
+      0.48432465406003544,
+      0.5859052758668225
+    ],
+    "session_auc": 0.5637017727232668,
+    "session_auc_ci95": [
+      0.5078681826104353,
+      0.6187327226469659
+    ]
+  },
+  "Caption sim. (e5)": {
+    "features": [
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.616413916146298,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.46410156249999995,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.5719449225473321,
+        "coverage_at_80": 0.012048192771084338
+      }
+    ],
+    "auc": 0.5508201337312101,
+    "coverage_at_80": 0.007349397590361445,
+    "auc_ci95": [
+      0.5013767037322119,
+      0.600788526176396
+    ],
+    "session_auc": 0.5257243684536692,
+    "session_auc_ci95": [
+      0.4682194189285385,
+      0.5822450406281976
+    ]
+  },
+  "Context": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.4355486173059768,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.518671875,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.589443488238669,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.5145546601815486,
+    "coverage_at_80": 0.0033333333333333335,
+    "auc_ci95": [
+      0.4695032835569417,
+      0.562853486304983
+    ],
+    "session_auc": 0.4667147622890378,
+    "session_auc_ci95": [
+      0.4137644708818833,
+      0.529047993454206
+    ]
+  },
+  "Taste (MobileNetV3)": {
+    "features": [
+      "creator_skip_rate",
+      "frame_mobilenet",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.5925512934879573,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5343749999999999,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.6727481353987378,
+        "coverage_at_80": 0.2289156626506024
+      }
+    ],
+    "auc": 0.599891476295565,
+    "coverage_at_80": 0.07963855421686747,
+    "auc_ci95": [
+      0.5529720121985483,
+      0.6486387411055152
+    ],
+    "session_auc": 0.5779318064037781,
+    "session_auc_ci95": [
+      0.510067449521191,
+      0.6321374418648547
+    ]
+  },
+  "Taste (CLIP)": {
+    "features": [
+      "creator_skip_rate",
+      "frame_clip",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6217662801070473,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.521328125,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.6705679862306368,
+        "coverage_at_80": 0.2289156626506024
+      }
+    ],
+    "auc": 0.6045541304458947,
+    "coverage_at_80": 0.07963855421686747,
+    "auc_ci95": [
+      0.5559024810022873,
+      0.6539639432081247
+    ],
+    "session_auc": 0.5814723367442931,
+    "session_auc_ci95": [
+      0.5197322861880546,
+      0.6372855075242791
+    ]
+  },
+  "Context + taste (MobileNetV3)": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate",
+      "log_creator_seen",
+      "creator_skip_rate",
+      "frame_mobilenet",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.42350579839429087,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.46054687499999997,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.5967871485943775,
+        "coverage_at_80": 0.060240963855421686
+      }
+    ],
+    "auc": 0.49361327399622273,
+    "coverage_at_80": 0.020080321285140562,
+    "auc_ci95": [
+      0.44766953062148124,
+      0.544993909515627
+    ],
+    "session_auc": 0.4651276322467834,
+    "session_auc_ci95": [
+      0.407360089815076,
+      0.5239812249178627
+    ]
+  },
+  "Context + taste (CLIP)": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate",
+      "log_creator_seen",
+      "creator_skip_rate",
+      "frame_clip",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.42685102586975915,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.45125,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 188,
+        "skip_share": 0.44148936170212766,
+        "auc": 0.5819850831899025,
+        "coverage_at_80": 0.10843373493975904
+      }
+    ],
+    "auc": 0.4866953696865539,
+    "coverage_at_80": 0.03614457831325301,
+    "auc_ci95": [
+      0.4413499407569982,
+      0.5394217698319639
+    ],
+    "session_auc": 0.4521012504562512,
+    "session_auc_ci95": [
+      0.3955160712234495,
+      0.5089721180943019
+    ]
+  }
+}
