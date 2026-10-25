@@ -75,4 +75,5 @@ object Exporter {
         .put("feed_index", feedIndex ?: JSONObject.NULL)
         .put("label", label?.name ?: JSONObject.NULL)
         .put("frame_count", frameCount)
+        .put("first_frame_ms", firstFrameMs ?: JSONObject.NULL)
 }

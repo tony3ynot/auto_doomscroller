@@ -23,7 +23,12 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
      * [page] identifies the page across reads. Node objects are snapshots, so its children are
      * only as fresh as the read that fetched it; walks always start from the current read's node.
      */
-    private class PageCache(val page: AccessibilityNodeInfo, val index: Int?, val firstSeenAtMs: Long) {
+    private class PageCache(
+        val page: AccessibilityNodeInfo,
+        val recycler: AccessibilityNodeInfo,
+        val index: Int?,
+        val firstSeenAtMs: Long,
+    ) {
         var creator: String? = null
         var isLive = false
         var title: String? = null
@@ -61,7 +66,7 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
         val now = clock()
         val index = page.collectionItemInfo?.rowIndex
         val entry = cache?.takeIf { it.page == page && it.index == index }
-            ?: PageCache(page, index, now).also { cache = it }
+            ?: PageCache(page, recycler, index, now).also { cache = it }
 
         val sinceFirstMs = now - entry.firstSeenAtMs
         val scheduledRead = entry.detailReads < DETAIL_READ_TIMES_MS.size &&
@@ -104,6 +109,13 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
     override fun isCommentsWindow(root: AccessibilityNodeInfo): Boolean =
         root.findById(ENGAGEMENT_PANEL).any { it.isVisibleToUser } &&
             root.findById(PANEL_TITLE).any { it.text?.toString()?.trim() in COMMENT_TITLES }
+
+    /** [read] accepts a page covering most of the pager; for screenshots it has to fill it. */
+    override fun settledMediaBounds(root: AccessibilityNodeInfo): Rect? {
+        val entry = cache?.takeIf { it.creator != null } ?: return null
+        if (!entry.page.refresh() || !entry.recycler.refresh()) return null
+        return entry.page.bounds().takeIf { it == entry.recycler.bounds() }
+    }
 
     /** One walk over the page; later reads only fill in what earlier ones missed. */
     private fun readDetails(entry: PageCache, page: AccessibilityNodeInfo) {

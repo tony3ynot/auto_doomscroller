@@ -2,6 +2,7 @@ package com.autodoomscroller.service
 
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -49,6 +50,9 @@ class ReelsAccessibilityService : AccessibilityService() {
     private lateinit var capturer: ScreenCapturer
     private lateinit var autoPilot: AutoPilot
     private var loopDetector = LoopDetector()
+
+    /** Where the current reel settled on screen; its frames are cropped to this. */
+    private var mediaBounds: Rect? = null
     private var showingOtherItem = false
     private var lastDiscoveryDumpAtMs = 0L
     private var lastUnskippedAdSequence: Int? = null
@@ -148,7 +152,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         when (state) {
             is FeedState.OnReel -> {
                 showingOtherItem = false
-                if (tracker.onReelObserved(state.snapshot, mode)) onNewReel(state.snapshot)
+                if (tracker.onReelObserved(state.snapshot, mode)) onNewReel(state.snapshot, adapter)
                 maybeSkipAd()
                 checkCommentWindows(adapter, root)
             }
@@ -245,36 +249,72 @@ class ReelsAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun onNewReel(reel: ReelSnapshot) {
+    private fun onNewReel(reel: ReelSnapshot, adapter: TargetAppAdapter) {
         cancelFrames()
+        mediaBounds = null
         if (autoPilot.isUndo(reel)) tracker.markUndone()
         val sequence = tracker.currentSequence ?: return
         loopDetector = LoopDetector()
-        FRAME_OFFSETS_MS.forEachIndexed { index, offsetMs ->
-            val keepHiRes = index == FRAME_OFFSETS_MS.lastIndex
-            frameHandler.postDelayed({ captureFrame(sequence, keep = true, keepHiRes = keepHiRes) }, offsetMs)
-        }
-        frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_START_MS)
+        waitUntilSettled(sequence, adapter)
         if (BuildConfig.DEBUG) frameHandler.postDelayed({ dumpTree(sequence) }, TREE_DUMP_DELAY_MS)
-        // TODO: after the last frame, run FeatureExtractor + PreferenceModel and pass
+        // TODO: after the first frame, run FeatureExtractor + PreferenceModel and pass
         //  P(skip) to autoPilot.onPrediction(); call tracker.markAutoSkipped() if it skips.
     }
 
     /**
-     * [keep]: store a thumbnail with the reel (first frames); otherwise the frame only feeds loop
-     * detection. [keepHiRes]: also keep the full capture, readable enough for OCR.
+     * A reel becomes current while the swipe that brings it in is still finishing, and a
+     * screenshot then shows part of the previous reel. So frames wait until the page has
+     * stopped moving and are all cropped to where it settled. The first one is taken at once:
+     * it is what Auto mode has to decide on.
      */
-    private fun captureFrame(sequence: Int, keep: Boolean, keepHiRes: Boolean = false) {
-        capturer.capture(stillWanted = { tracker.currentSequence == sequence }) { capture ->
+    private fun waitUntilSettled(sequence: Int, adapter: TargetAppAdapter) {
+        if (tracker.currentSequence != sequence) return
+        val elapsedMs = tracker.currentElapsedMs ?: return
+        val bounds = settledBounds(adapter)
+        when {
+            bounds != null -> onSettled(sequence, adapter, bounds, elapsedMs)
+            elapsedMs < SETTLE_TIMEOUT_MS ->
+                frameHandler.postDelayed({ waitUntilSettled(sequence, adapter) }, SETTLE_POLL_MS)
+            BuildConfig.DEBUG -> Log.d(TAG, "reel didn't settle within ${SETTLE_TIMEOUT_MS}ms; no frames")
+        }
+    }
+
+    private fun settledBounds(adapter: TargetAppAdapter): Rect? =
+        rootInActiveWindow?.takeIf { it.packageName?.toString() == adapter.packageName }
+            ?.let(adapter::settledMediaBounds)
+
+    private fun onSettled(sequence: Int, adapter: TargetAppAdapter, bounds: Rect, elapsedMs: Long) {
+        mediaBounds = bounds
+        if (BuildConfig.DEBUG) Log.d(TAG, "settled after ${elapsedMs}ms; frames cropped to $bounds")
+        captureFrame(sequence, adapter, keep = true)
+        FRAME_OFFSETS_MS.forEach { offsetMs ->
+            frameHandler.postDelayed({ captureFrame(sequence, adapter, keep = true) }, (offsetMs - elapsedMs).coerceAtLeast(0))
+        }
+        frameHandler.postDelayed({ sampleForLoop(sequence, adapter) }, (LOOP_SAMPLING_START_MS - elapsedMs).coerceAtLeast(0))
+    }
+
+    /**
+     * [keep]: store a thumbnail with the reel; otherwise the frame only feeds loop detection.
+     * The first kept frame is also kept at capture size, readable enough for OCR. A frame is
+     * dropped if the reel was moving when it was requested or is by the time it arrives.
+     */
+    private fun captureFrame(sequence: Int, adapter: TargetAppAdapter, keep: Boolean) {
+        val bounds = mediaBounds ?: return
+        val stillCurrent = { tracker.currentSequence == sequence && settledBounds(adapter) != null }
+        capturer.capture(bounds, stillWanted = stillCurrent) { capture ->
             val elapsedMs = tracker.currentElapsedMs
-            if (tracker.currentSequence != sequence || elapsedMs == null) {
+            if (elapsedMs == null || !stillCurrent()) {
                 capture.recycle()
                 return@capture
             }
-            val hiRes = if (keepHiRes) capture.copy(capture.config ?: Bitmap.Config.ARGB_8888, false) else null
+            val hiRes = if (keep && tracker.currentNeedsHiResFrame) {
+                capture.copy(capture.config ?: Bitmap.Config.ARGB_8888, false)
+            } else {
+                null
+            }
             val thumbnail = capture.scaledToWidth(ScreenCapturer.THUMBNAIL_WIDTH)
             loopDetector.add(Fingerprint.of(thumbnail), elapsedMs)?.let(tracker::onLoopEstimated)
-            if (keep) tracker.addFrame(sequence, thumbnail) else thumbnail.recycle()
+            if (keep) tracker.addFrame(sequence, thumbnail, elapsedMs) else thumbnail.recycle()
             hiRes?.let { tracker.setHiResFrame(sequence, it) }
         }
     }
@@ -285,15 +325,15 @@ class ReelsAccessibilityService : AccessibilityService() {
      * [VALIDATION_SAMPLE_EVERY] of them is sampled anyway, with the scrubber as ground truth
      * for the estimate; a sample is enough for that, and screenshots are the main battery cost.
      */
-    private fun sampleForLoop(sequence: Int) {
+    private fun sampleForLoop(sequence: Int, adapter: TargetAppAdapter) {
         val reel = tracker.currentSnapshot ?: return
         val elapsedMs = tracker.currentElapsedMs ?: return
         if (tracker.currentSequence != sequence || tracker.currentLoopEstimated || elapsedMs > LOOP_SAMPLING_MAX_MS) return
         if (reel.mediaType != MediaType.VIDEO || reel.isAd) return
         val validate = SessionController.researchMode.value && sequence % VALIDATION_SAMPLE_EVERY == 0
         if (reel.durationMs != null && !validate) return
-        captureFrame(sequence, keep = false)
-        frameHandler.postDelayed({ sampleForLoop(sequence) }, LOOP_SAMPLING_INTERVAL_MS)
+        captureFrame(sequence, adapter, keep = false)
+        frameHandler.postDelayed({ sampleForLoop(sequence, adapter) }, LOOP_SAMPLING_INTERVAL_MS)
     }
 
     private fun cancelFrames() {
@@ -326,8 +366,10 @@ class ReelsAccessibilityService : AccessibilityService() {
         const val TAG = "ReelsService"
         const val READ_INTERVAL_MS = 250L
         const val SLOW_READ_MS = 50L
-        /** Frames taken after a reel starts; ScreenCapturer spaces them to respect the rate limit. */
-        val FRAME_OFFSETS_MS = longArrayOf(300, 800, 1_300)
+        /** Frames after the first, measured from when the reel appeared; ScreenCapturer spaces them. */
+        val FRAME_OFFSETS_MS = longArrayOf(800, 1_300)
+        const val SETTLE_POLL_MS = 50L
+        const val SETTLE_TIMEOUT_MS = 1_500L
         const val LOOP_SAMPLING_START_MS = 2_300L
         const val LOOP_SAMPLING_INTERVAL_MS = 1_000L
         const val LOOP_SAMPLING_MAX_MS = 120_000L

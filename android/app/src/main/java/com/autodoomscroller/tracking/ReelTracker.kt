@@ -48,6 +48,8 @@ class ReelTracker(
         var autoSkipped = false
         var undone = false
         val frames = mutableListOf<Bitmap>()
+        /** When the first frame was taken, in ms on screen: the earliest moment Auto mode could decide. */
+        var firstFrameMs: Long? = null
         var hiResFrame: Bitmap? = null
         var pausedAtMs: Long? = null
         var pausedTotalMs = 0L
@@ -79,6 +81,10 @@ class ReelTracker(
     /** Frame-based loop detection already produced an estimate, so it can stop sampling. */
     val currentLoopEstimated: Boolean
         get() = current?.loopEstimateMs != null
+
+    /** The current reel has no full-size frame yet; the first kept frame provides it. */
+    val currentNeedsHiResFrame: Boolean
+        get() = current?.let { it.hiResFrame == null } == true
 
     val currentAutoSkipped: Boolean
         get() = current?.autoSkipped == true
@@ -150,9 +156,14 @@ class ReelTracker(
         reel.maxPositionMs = maxOf(reel.maxPositionMs ?: 0L, position)
     }
 
-    fun addFrame(sequence: Int, frame: Bitmap) {
+    fun addFrame(sequence: Int, frame: Bitmap, elapsedMs: Long) {
         val active = current
-        if (active != null && active.sequence == sequence) active.frames.add(frame) else frame.recycle()
+        if (active == null || active.sequence != sequence) {
+            frame.recycle()
+            return
+        }
+        if (active.frames.isEmpty()) active.firstFrameMs = elapsedMs
+        active.frames.add(frame)
     }
 
     fun setHiResFrame(sequence: Int, frame: Bitmap) {
@@ -261,6 +272,7 @@ class ReelTracker(
                     (if (reel.carouselSwipes > 0) " swipes=${reel.carouselSwipes}" else "") +
                     (if (reel.openedComments) " comments" else "") +
                     " frames=${reel.frames.size}" +
+                    (reel.firstFrameMs?.let { " first=${it}ms" } ?: "") +
                     (if (reel.autoSkipped) " auto-skipped" else ""),
             )
         }
@@ -305,6 +317,7 @@ class ReelTracker(
             feedIndex = snapshot.feedIndex,
             label = label,
             frameCount = frames.size,
+            firstFrameMs = reel.firstFrameMs,
         )
         val keepFrames = SessionController.researchMode.value
         scope.launch {

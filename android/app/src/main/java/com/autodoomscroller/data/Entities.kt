@@ -56,4 +56,6 @@ data class ReelEntity(
     val feedIndex: Int?,
     val label: ReelLabel?,
     val frameCount: Int,
+    /** Time on screen when the first frame was taken; null without frames or before schema v9. */
+    val firstFrameMs: Long?,
 )

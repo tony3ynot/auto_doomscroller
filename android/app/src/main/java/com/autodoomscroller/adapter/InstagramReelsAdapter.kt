@@ -1,5 +1,6 @@
 package com.autodoomscroller.adapter
 
+import android.graphics.Rect
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import com.autodoomscroller.tracking.MediaType
@@ -34,7 +35,12 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         val commentsOpen: Boolean,
     )
 
-    private class PageCache(val page: AccessibilityNodeInfo, val creator: String, val firstSeenAtMs: Long) {
+    private class PageCache(
+        val page: AccessibilityNodeInfo,
+        val pager: AccessibilityNodeInfo,
+        val creator: String,
+        val firstSeenAtMs: Long,
+    ) {
         var details: Details? = null
         var detailReads = 0
         var state: State? = null
@@ -69,7 +75,7 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
 
         val now = clock()
         val entry = cache?.takeIf { it.creator == creator && it.page == page }
-            ?: PageCache(page, creator, now).also { cache = it }
+            ?: PageCache(page, pager, creator, now).also { cache = it }
         if (entry.detailReads < DETAIL_READ_TIMES_MS.size &&
             now - entry.firstSeenAtMs >= DETAIL_READ_TIMES_MS[entry.detailReads]
         ) {
@@ -121,6 +127,18 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
      * Match on the ID's name instead.
      */
     override fun isCommentsWindow(root: AccessibilityNodeInfo): Boolean = isCommentSheet(root)
+
+    /**
+     * The page fills the pager once a swipe has finished. The Instagram home is itself a Reels
+     * viewer; at the top of it the stories tray pushes the pager down, so the page is shorter
+     * and cropping to it leaves the tray out. The pager is re-read too, since it grows back when
+     * the tray folds away.
+     */
+    override fun settledMediaBounds(root: AccessibilityNodeInfo): Rect? {
+        val entry = cache ?: return null
+        if (!entry.page.refresh() || !entry.pager.refresh()) return null
+        return entry.page.bounds().takeIf { it == entry.pager.bounds() }
+    }
 
     private fun isCommentSheet(root: AccessibilityNodeInfo): Boolean =
         root.firstDescendant(maxDepth = COMMENT_SHEET_MAX_DEPTH) { node ->
@@ -217,6 +235,8 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
 
     private fun AccessibilityNodeInfo.findById(id: String): List<AccessibilityNodeInfo> =
         findAccessibilityNodeInfosByViewId("$PACKAGE:id/$id")
+
+    private fun AccessibilityNodeInfo.bounds(): Rect = Rect().also(::getBoundsInScreen)
 
     private fun AccessibilityNodeInfo.firstDescendant(
         maxDepth: Int = MAX_DEPTH,

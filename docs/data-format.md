@@ -67,6 +67,7 @@ One line per reel the user landed on.
 | `feed_index` | int or null | Position in the feed as reported by the app; restarts when the feed refreshes |
 | `label` | `SKIP`, `WATCH` or null | Label computed on device (see below) |
 | `frame_count` | int | Frames captured for this reel |
+| `first_frame_ms` | int or null | Time on the reel when the first frame was taken, the earliest point a decision could use it; null when no frame was kept (and in rows from before schema v9) |
 
 ## Labels
 
@@ -100,9 +101,17 @@ carousels have no length.
 
 ## Thumbnails
 
-Saved only when research mode is on, JPEG, original aspect ratio:
+Saved only when research mode is on, JPEG:
 
-- `<reel_id>_<frame_index>.jpg`: 224 px wide, taken about 0.3 s, 0.8 s and 1.3 s into the
-  reel. The encoder input (224×224 center crop) is produced from these.
-- `<reel_id>_hires.jpg`: the 1.3 s frame at 540 px wide, so on-screen text (subtitles, meme
-  captions) is readable for OCR.
+- `<reel_id>_<frame_index>.jpg`: 224 px wide. The first is taken as soon as the reel has
+  stopped moving after the swipe (`first_frame_ms`), the others about 0.8 s and 1.3 s into the
+  reel. A frame is dropped if the reel was moving when it was taken. The encoder input
+  (224×224 center crop) is produced from these.
+- `<reel_id>_hires.jpg`: the first frame at 540 px wide, so on-screen text (subtitles, hook
+  text) is readable for OCR when a decision is due.
+
+Since schema v9 every frame is cropped to the reel's area on screen: no status bar, navigation
+or comment bar, and no Instagram stories tray at the top of the home feed. Rows
+from before v9 (`first_frame_ms` null with `frame_count` > 0) have full-screen frames taken at
+fixed times (about 0.3 s, 0.8 s, 1.3 s), some of them mid-swipe, and their `_hires.jpg` is the
+1.3 s frame. Don't mix the two kinds in one embedding experiment.

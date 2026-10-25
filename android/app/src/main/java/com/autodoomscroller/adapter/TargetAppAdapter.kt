@@ -1,5 +1,6 @@
 package com.autodoomscroller.adapter
 
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.autodoomscroller.tracking.ReelSnapshot
 
@@ -15,6 +16,14 @@ interface TargetAppAdapter {
      * meanwhile; this is how the service still notices. Must be cheap: it runs once a second.
      */
     fun isCommentsWindow(root: AccessibilityNodeInfo): Boolean = false
+
+    /**
+     * Where the reel from the last [read] is on screen, once it has stopped moving; null while it
+     * is still sliding in or out. Screenshots are cropped to it, so they hold the reel and not the
+     * status bar, navigation or whatever else the app shows around the feed. Re-fetches nodes, so
+     * a call costs a couple of IPC round trips; [root] is the app's active window.
+     */
+    fun settledMediaBounds(root: AccessibilityNodeInfo): Rect? = null
 }
 
 sealed interface FeedState {
