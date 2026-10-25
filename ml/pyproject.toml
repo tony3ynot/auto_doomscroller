@@ -11,6 +11,8 @@ dependencies = [
 
 [project.optional-dependencies]
 quant = ["tensorflow>=2.16"]
+# Frame / caption embeddings for offline experiments (autodoom.embed)
+embed = ["tensorflow>=2.16", "torch>=2.4", "open_clip_torch>=2.24", "sentence-transformers>=3.0"]
 viz = ["matplotlib>=3.8"]
 dev = ["pytest>=8"]
 

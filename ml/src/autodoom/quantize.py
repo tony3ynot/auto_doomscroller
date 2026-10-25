@@ -30,11 +30,13 @@ def build_encoder():
     )
 
 
-def load_frame(path: Path):
-    """Center-crop to a square and resize, matching what the app does before inference."""
+def load_frame(path):
+    """Center-crop to a square and resize, matching what the app does before inference.
+
+    ``path`` is a Path or str, or a string tensor inside ``tf.data``."""
     import tensorflow as tf
 
-    image = tf.io.decode_jpeg(tf.io.read_file(str(path)), channels=3)
+    image = tf.io.decode_jpeg(tf.io.read_file(path if tf.is_tensor(path) else str(path)), channels=3)
     side = tf.minimum(tf.shape(image)[0], tf.shape(image)[1])
     image = tf.image.resize_with_crop_or_pad(image, side, side)
     return tf.image.resize(image, (INPUT_SIZE, INPUT_SIZE))

@@ -26,10 +26,30 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.data` | Load `sessions.jsonl` / `reels.jsonl` and thumbnails |
 | `autodoom.clean` | Repairs exports from before schema v8 (split viewings, loose revisit flags) |
 | `autodoom.labels` | The SKIP / WATCH rule, kept in sync with `ReelLabeler.kt` |
-| `autodoom.split` | Time-based train/test split |
+| `autodoom.split` | Time-based train/test split and rolling day-by-day folds |
+| `autodoom.features` | Features known at decision time (0.3 s in), history-based taste scores |
+| `autodoom.embed` | First-frame and caption embeddings, cached inside the export folder |
+| `autodoom.model` | The skip model (logistic regression) |
+| `autodoom.report` | `run.json` records for result folders |
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
 | `autodoom.baselines` | Majority and creator-history baselines |
 | `autodoom.quantize` | MobileNetV3 frame encoder → FP32 / FP16 / INT8 LiteRT variants |
+
+Scripts in `scripts/` write a result folder under `results/` at the repo root
+(see [results/README.md](../results/README.md)):
+
+| Script | Writes |
+|---|---|
+| `prelim_figures.py` | Collection statistics and the two preliminary figures |
+| `skip_model.py` | Feature-set comparison for the skip model |
+
+From the repo root, with exports in `data/`:
+
+```bash
+pip install -e "ml[embed,viz]"
+python -m autodoom.embed data/<export>                 # once per export; cached
+python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model
+```
 
 ## Typical loop
 

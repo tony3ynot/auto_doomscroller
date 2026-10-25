@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 from autodoom.baselines import creator_history_scores, majority_scores
-from autodoom.split import temporal_split
+from autodoom.split import rolling_days, temporal_split
 
 DAY_MS = 24 * 3600 * 1000
 # 2026-10-20 12:00 KST
@@ -20,6 +20,13 @@ def test_temporal_split_needs_enough_days():
     reels = pd.DataFrame({"started_at_ms": [T0, T0 + 1000]})
     with pytest.raises(ValueError):
         temporal_split(reels, test_days=1)
+
+
+def test_rolling_days_trains_on_every_earlier_day():
+    reels = pd.DataFrame({"started_at_ms": [T0 + d * DAY_MS for d in range(4)]})
+    folds = rolling_days(reels, min_train_days=2)
+    assert [len(train) for _, train, _ in folds] == [2, 3]
+    assert [test["started_at_ms"].tolist() for _, _, test in folds] == [[T0 + 2 * DAY_MS], [T0 + 3 * DAY_MS]]
 
 
 def test_creator_history_smooths_toward_global_rate():
