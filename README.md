@@ -160,13 +160,16 @@ See [ml/README.md](ml/README.md) for the analysis loop and the quantization scri
 
 ## Roadmap
 
-- [ ] Reel logger for Instagram Reels (transitions, dwell, likes, frames, text)
-- [ ] Offline baselines and first personal model
+- [x] Reel logger for Instagram Reels (transitions, dwell, likes, frames, text)
+- [x] YouTube Shorts
+- [x] Offline baselines and first personal model ([experiment log](docs/experiments.md))
+- [ ] Hands-free mode: camera gestures to skip and like
 - [ ] On-device inference and live prediction overlay
 - [ ] Auto mode with corrections
 - [ ] Encoder quantization and on-device benchmarks
 - [ ] Taste map, session report card
-- [ ] YouTube Shorts
+- [ ] UI languages other than Korean: reel tracking uses view IDs, but a few signals (YouTube
+      like / save state and playback time, some ad labels) are read from Korean UI text
 - [ ] Browser extension
 
 ## Disclaimer
