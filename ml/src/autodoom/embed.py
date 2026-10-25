@@ -10,6 +10,8 @@ Models:
     mobilenet_v3_small  the encoder the app ships (``quantize.build_encoder``), 576-d
     clip_vit_b32        OpenCLIP ViT-B/32 (LAION-2B), 512-d; a stronger reference, too big for the phone
     e5_small            multilingual-e5-small on caption + audio title, 384-d
+    e5_ocr_first        the same on text read from the first frame (``autodoom.ocr``, run it first)
+    e5_ocr_hires        the same on text read from the 540 px frame
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ import numpy as np
 import pandas as pd
 
 IMAGE_MODELS = ("mobilenet_v3_small", "clip_vit_b32")
-TEXT_MODELS = ("e5_small",)
+TEXT_MODELS = ("e5_small", "e5_ocr_first", "e5_ocr_hires")
 BATCH = 64
 
 
@@ -34,6 +36,16 @@ def reel_text(row) -> str | None:
     """Caption (Instagram) or title (YouTube), plus the audio name when there is one."""
     parts = [t for t in (row.caption, row.audio) if isinstance(t, str) and t.strip()]
     return "\n".join(parts) if parts else None
+
+
+def _texts(export_dir: Path, reels: pd.DataFrame, model: str) -> dict[int, str | None]:
+    if model == "e5_small":
+        return {int(r.id): reel_text(r) for r in reels.itertuples()}
+    from .ocr import clean_text, load_raw
+
+    raw = load_raw(export_dir, model.removeprefix("e5_ocr_"))
+    return {int(r.id): clean_text(raw[int(r.id)], known=(r.creator,)) if int(r.id) in raw else None
+            for r in reels.itertuples()}
 
 
 def _normalize(x: np.ndarray) -> np.ndarray:
@@ -74,31 +86,40 @@ def _e5(texts: list[str]) -> np.ndarray:
 def embeddings(export_dir: str | Path, reels: pd.DataFrame, model: str) -> pd.DataFrame:
     """L2-normalised embeddings indexed like ``reels``; NaN rows where there is no frame / text.
 
-    Computed once per reel id and cached in ``<export>/cache/<model>.npz``.
+    Cached in ``<export>/cache/<model>.npz``: per reel id, and for text models per text too, so
+    a change to the OCR cleaning rules re-embeds only the reels whose text changed.
     """
     export_dir = Path(export_dir)
     cache = export_dir / "cache" / f"{model}.npz"
     known: dict[int, np.ndarray] = {}
+    keys: dict[int, str] = {}
     if cache.exists():
         saved = np.load(cache)
         known = dict(zip(saved["ids"].tolist(), saved["vectors"]))
+        if "keys" in saved:
+            keys = dict(zip(saved["ids"].tolist(), saved["keys"].tolist()))
 
     if model in IMAGE_MODELS:
         inputs = {int(r.id): first_frame(export_dir, r.id) for r in reels.itertuples()}
         compute = _mobilenet if model == "mobilenet_v3_small" else _clip
     elif model in TEXT_MODELS:
-        inputs = {int(r.id): reel_text(r) for r in reels.itertuples()}
+        inputs = _texts(export_dir, reels, model)
         compute = _e5
     else:
         raise ValueError(f"unknown model {model!r}")
 
-    todo = [i for i, x in inputs.items() if x is not None and i not in known]
+    def key(i: int) -> str:
+        return inputs[i] if model in TEXT_MODELS else ""
+
+    todo = [i for i, x in inputs.items() if x is not None and (i not in known or keys.get(i, "") != key(i))]
     if todo:
         vectors = _normalize(np.asarray(compute([inputs[i] for i in todo]), dtype=np.float32))
         known.update(zip(todo, vectors))
+        keys.update((i, key(i)) for i in todo)
         cache.parent.mkdir(exist_ok=True)
         ids = np.array(sorted(known))
-        np.savez(cache, ids=ids, vectors=np.stack([known[i] for i in ids]))
+        np.savez(cache, ids=ids, vectors=np.stack([known[i] for i in ids]),
+                 keys=np.array([keys.get(i, "") for i in ids]))
 
     dim = len(next(iter(known.values()))) if known else 0
     nan = np.full(dim, np.nan, dtype=np.float32)

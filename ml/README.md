@@ -28,7 +28,9 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.labels` | The SKIP / WATCH rule, kept in sync with `ReelLabeler.kt` |
 | `autodoom.split` | Time-based train/test split and rolling day-by-day folds |
 | `autodoom.features` | Features known at decision time (0.3 s in), history-based taste scores |
-| `autodoom.embed` | First-frame and caption embeddings, cached inside the export folder |
+| `autodoom.embed` | First-frame, caption and frame-text embeddings, cached inside the export folder |
+| `autodoom.ocr` | Text on the frame (EasyOCR standing in for ML Kit), raw results cached, UI text filtered |
+| `autodoom.experiment` | Dataset, rolling-fold scoring, result table and AUC chart shared by the scripts |
 | `autodoom.model` | The skip model (logistic regression) |
 | `autodoom.report` | `run.json` records for result folders |
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
@@ -42,13 +44,16 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 |---|---|
 | `prelim_figures.py` | Collection statistics and the two preliminary figures |
 | `skip_model.py` | Feature-set comparison for the skip model |
+| `frame_text.py` | Whether text read off the frame adds to the skip model |
 
 From the repo root, with exports in `data/`:
 
 ```bash
-pip install -e "ml[embed,viz]"
+pip install -e "ml[embed,ocr,viz]"
 python -m autodoom.embed data/<export>                 # once per export; cached
 python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model
+python -m autodoom.ocr data/<export> --source first    # and --source hires; slow, cached
+python ml/scripts/frame_text.py data/<export> --out results/<date>-frame-text
 ```
 
 ## Typical loop
