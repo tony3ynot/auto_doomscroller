@@ -131,3 +131,15 @@ What it changes
   comparison on all first impressions once a few hundred labeled reels have been recorded that
   way.
 - Taste (0.62) stays the model to beat.
+
+## 2026-10-31 · Six days, for the proposal
+
+Results: [results/2026-10-31-prelim](../results/2026-10-31-prelim/summary.md),
+[results/2026-10-31-skip-model](../results/2026-10-31-skip-model/summary.md) · same scripts,
+newer export (10-20 – 10-25, 1833 reels, 933 first impressions)
+
+- 38% of non-ad reels are left within 2 s in both apps; half of the SKIPs happen within 1.1 s.
+- Creator history alone now scores 0.63 (95% CI 0.58–0.68), slightly above Taste (0.62): with
+  one more day, content similarity adds nothing on top of it yet.
+- MobileNetV3 and CLIP frame similarity: 0.56 and 0.55. Context still hurts (0.56).
+- These are the numbers in the proposal ([paper/proposal](../paper/proposal/main.tex)).

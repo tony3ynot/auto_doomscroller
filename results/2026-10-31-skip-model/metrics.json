@@ -1,0 +1,505 @@
+{
+  "Majority": {
+    "features": [],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.5,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.5,
+    "coverage_at_80": 0.0
+  },
+  "Creator history": {
+    "features": [
+      "creator_skip_rate"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6136262265834077,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5684374999999999,
+        "coverage_at_80": 0.13
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5890266299357209,
+        "coverage_at_80": 0.13333333333333333
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.744,
+        "coverage_at_80": 0.2
+      }
+    ],
+    "auc": 0.6287725891297822,
+    "coverage_at_80": 0.11583333333333333,
+    "auc_ci95": [
+      0.582570647914888,
+      0.6765253182447845
+    ],
+    "session_auc": 0.5298081975896302,
+    "session_auc_ci95": [
+      0.47482496652920114,
+      0.5798117177836218
+    ]
+  },
+  "Frame sim. (MobileNetV3)": {
+    "features": [
+      "frame_mobilenet"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6037020517395183,
+        "coverage_at_80": 0.07894736842105263
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.4995312499999999,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5079430670339762,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.6389333333333334,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.562527425526707,
+    "coverage_at_80": 0.019736842105263157,
+    "auc_ci95": [
+      0.5156566923926649,
+      0.6131015859039708
+    ],
+    "session_auc": 0.5202261851754336,
+    "session_auc_ci95": [
+      0.464485154825356,
+      0.5821313225059186
+    ]
+  },
+  "Frame sim. (CLIP)": {
+    "features": [
+      "frame_clip"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.60950044603033,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5021093750000001,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.48544536271809,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.5871999999999998,
+        "coverage_at_80": 0.0
+      }
+    ],
+    "auc": 0.546063795937105,
+    "coverage_at_80": 0.0,
+    "auc_ci95": [
+      0.49521261939081096,
+      0.5951212512452534
+    ],
+    "session_auc": 0.5530031970559367,
+    "session_auc_ci95": [
+      0.5059744202111297,
+      0.6074073862979491
+    ]
+  },
+  "Caption sim. (e5)": {
+    "features": [
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.616413916146298,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.46410156249999995,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5708448117539027,
+        "coverage_at_80": 0.011111111111111112
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.5733333333333334,
+        "coverage_at_80": 0.04
+      }
+    ],
+    "auc": 0.5561734059333835,
+    "coverage_at_80": 0.015277777777777779,
+    "auc_ci95": [
+      0.5064197293048132,
+      0.6047995539885281
+    ],
+    "session_auc": 0.5208644868112058,
+    "session_auc_ci95": [
+      0.4736052994546895,
+      0.5731810543018754
+    ]
+  },
+  "Context": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.4355486173059768,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.518671875,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5777777777777777,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.6928,
+        "coverage_at_80": 0.04
+      }
+    ],
+    "auc": 0.5561995675209387,
+    "coverage_at_80": 0.0125,
+    "auc_ci95": [
+      0.5102845313561479,
+      0.600412706443425
+    ],
+    "session_auc": 0.47150017471662237,
+    "session_auc_ci95": [
+      0.4245580268700252,
+      0.5285646404609057
+    ]
+  },
+  "Taste (MobileNetV3)": {
+    "features": [
+      "creator_skip_rate",
+      "frame_mobilenet",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.5925512934879573,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.5343749999999999,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.6531680440771349,
+        "coverage_at_80": 0.13333333333333333
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.7077333333333333,
+        "coverage_at_80": 0.24
+      }
+    ],
+    "auc": 0.6219569177246063,
+    "coverage_at_80": 0.09583333333333333,
+    "auc_ci95": [
+      0.5747450141186601,
+      0.6690236723500212
+    ],
+    "session_auc": 0.5835131557452479,
+    "session_auc_ci95": [
+      0.5274904498061178,
+      0.6347419425940334
+    ]
+  },
+  "Taste (CLIP)": {
+    "features": [
+      "creator_skip_rate",
+      "frame_clip",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.6217662801070473,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.521328125,
+        "coverage_at_80": 0.01
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.6512396694214877,
+        "coverage_at_80": 0.13333333333333333
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.6954666666666667,
+        "coverage_at_80": 0.16
+      }
+    ],
+    "auc": 0.6224501852988005,
+    "coverage_at_80": 0.07583333333333334,
+    "auc_ci95": [
+      0.5763304952197315,
+      0.6703509881332691
+    ],
+    "session_auc": 0.5933289847752579,
+    "session_auc_ci95": [
+      0.5405090973640898,
+      0.6449422693459139
+    ]
+  },
+  "Context + taste (MobileNetV3)": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate",
+      "log_creator_seen",
+      "creator_skip_rate",
+      "frame_mobilenet",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.42350579839429087,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.46054687499999997,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5843893480257116,
+        "coverage_at_80": 0.06666666666666667
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.7829333333333334,
+        "coverage_at_80": 0.12
+      }
+    ],
+    "auc": 0.562843838688334,
+    "coverage_at_80": 0.04666666666666666,
+    "auc_ci95": [
+      0.5185257911200712,
+      0.6083348271338197
+    ],
+    "session_auc": 0.4901742121807892,
+    "session_auc_ci95": [
+      0.43845151066077254,
+      0.5452283967264826
+    ]
+  },
+  "Context + taste (CLIP)": {
+    "features": [
+      "youtube",
+      "image",
+      "carousel",
+      "promotion",
+      "log_likes",
+      "log_comments",
+      "has_caption",
+      "log_caption_len",
+      "has_audio",
+      "hour_sin",
+      "hour_cos",
+      "log_session_position",
+      "log_session_minutes",
+      "log_prev_dwell",
+      "recent_skip_rate",
+      "log_creator_seen",
+      "creator_skip_rate",
+      "frame_clip",
+      "caption_e5"
+    ],
+    "folds": [
+      {
+        "test_day": "2026-10-22",
+        "n": 156,
+        "skip_share": 0.24358974358974358,
+        "auc": 0.42685102586975915,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-23",
+        "n": 228,
+        "skip_share": 0.43859649122807015,
+        "auc": 0.45125,
+        "coverage_at_80": 0.0
+      },
+      {
+        "test_day": "2026-10-24",
+        "n": 211,
+        "skip_share": 0.4265402843601896,
+        "auc": 0.5730027548209367,
+        "coverage_at_80": 0.1111111111111111
+      },
+      {
+        "test_day": "2026-10-25",
+        "n": 100,
+        "skip_share": 0.25,
+        "auc": 0.7807999999999999,
+        "coverage_at_80": 0.32
+      }
+    ],
+    "auc": 0.557975945172674,
+    "coverage_at_80": 0.10777777777777778,
+    "auc_ci95": [
+      0.5126549531330572,
+      0.6020664508394918
+    ],
+    "session_auc": 0.47545666988079144,
+    "session_auc_ci95": [
+      0.42321889457936973,
+      0.5324094215700074
+    ]
+  }
+}
