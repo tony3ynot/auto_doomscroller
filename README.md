@@ -109,6 +109,7 @@ android/   Android app (Kotlin, Jetpack Compose)
     ui/          Compose screens
 ml/        Offline analysis, baselines, metrics, encoder quantization (Python)
 results/   Experiment results: aggregate numbers and figures, one folder per run
+paper/     Project proposal (ACM sigconf, LaTeX)
 web/       Browser extension (planned)
 docs/      Data format, experiment log
 scripts/   Build / install helpers
