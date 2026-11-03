@@ -39,9 +39,14 @@ feeds report a weakened sense of agency~\cite{lukoff2021youtube}.
 
 We ask whether the phone can learn those quick judgements from the user's own behaviour and
 act on them: skip what the user would skip anyway, let them move through the feed without
-touching it, and show them where their time goes. Unlike the platform's recommender, such an
-agent works for the user and keeps their data on the device. Building it touches every part of
-a mobile ML system: sensing, on-device learning, model compression and visualization.
+touching it, and show them where their time goes. The intended users are people who watch
+short videos every day and want less of that time spent on reels they don't care about,
+including when their hands are busy; in our logs that is about 100 quick swipes a day. Unlike
+the platform's recommender, the agent works for the user and keeps their data on the phone.
+
+The project covers the course's core topics: mobile sensing (accessibility events, screen
+capture, camera), on-device inference under latency and energy limits, and model optimization
+(quantization, pruning) measured before and after.
 
 \begin{figure}[t]
   \centering
@@ -55,9 +60,8 @@ a mobile ML system: sensing, on-device learning, model compression and visualiza
 Platforms predict engagement from the logs of millions of users: YouTube ranks videos by
 expected watch time~\cite{covington2016youtube}, Kuaishou corrects watch-time prediction for
 video length~\cite{zhan2022duration}, and dwell time is a well-established signal of
-preference~\cite{yi2014dwell}. EdgeRec even moves part of the ranking onto the phone so that it
-reacts to the user's latest actions~\cite{gong2020edgerec}, but it still serves the platform's
-goals. We instead predict one person's skips on their own phone, from a few hundred examples
+preference~\cite{yi2014dwell}. EdgeRec moves part of the ranking onto the phone to react to the
+user's latest actions~\cite{gong2020edgerec}, but still for the platform's goals. We instead predict one person's skips on their own phone, from a few hundred examples
 and without access to the platform.
 
 Digital self-control tools mostly block or limit use~\cite{lyngs2019selfcontrol}, and Lukoff
@@ -67,7 +71,8 @@ past choices and makes them visible.
 
 For hands-free control, EyePhone showed early on that a phone can be operated with eye
 blinks~\cite{miluzzo2010eyephone}, and MediaPipe now runs face and hand landmark models in real
-time on phones~\cite{lugaresi2019mediapipe}. For the models we use MobileNetV3 on
+time on phones~\cite{lugaresi2019mediapipe}. We use such gestures to move through a feed, and
+each gesture also becomes a training label. For the models we use MobileNetV3 on
 frames~\cite{howard2019mobilenetv3} and multilingual E5 on text~\cite{wang2024me5}, and compress
 them with integer quantization~\cite{jacob2018quantization} and pruning.
 
@@ -82,8 +87,8 @@ them with integer quantization~\cite{jacob2018quantization} and pruning.
 \textbf{Sense} (Fig.~\ref{fig:overview}). An accessibility service reads the screen of
 Instagram Reels and YouTube Shorts a few times per second to know which reel is showing, how
 long it stayed, and whether the user liked, saved or commented on it or watched it to the end.
-Once a reel has settled after the swipe, the service takes one screenshot cropped to the reel.
-In hands-free mode, the front camera is used for face and hand tracking.
+Once a reel has settled after the swipe, the service takes one screenshot cropped to the reel;
+in hands-free mode the front camera tracks the face and hands.
 
 \textbf{Label.} A reel counts as SKIP if the user left within 2\,s, and as WATCH if they
 interacted with it, watched it to the end, or stayed at least 5\,s. Everything in between is
@@ -91,17 +96,16 @@ left out. Likes alone would not work as a target: there were only 6 in 1{,}833 r
 
 \textbf{Learn.} The model may only use what is known when a reel appears: the first frame, the
 text on it (read with on-device OCR such as ML Kit), the caption, and the creator's history.
-For each of these we look up the most similar reels the user has already seen and use the share
-of skips among them as a score; a logistic regression combines the scores into
-$P(\text{skip})$. Because the scores come from a growing memory, the model keeps improving
-without retraining the encoders.
+For each we look up the most similar reels the user has already seen and use the share of skips
+among them as a score, so the model improves as the memory grows, without retraining the
+encoders. A logistic regression combines the scores into $P(\text{skip})$.
 
 \textbf{Act.} Auto mode swipes when $P(\text{skip})$ is high enough to be right 90\% of the
 time; if the user goes back to an auto-skipped reel, that counts as a correction. Hands-free
 mode maps a double wink to ``next'' and a thumbs-up to ``like''. A taste map and a per-session
 report card show the user's habits.
 
-\section{Prototype Implementation}
+\section{Prototype and Implementation Plan}
 The Android app (Kotlin, tested on a Galaxy S24) already tracks both apps, detects and skips
 ads, and exports its logs for offline analysis in Python, where we compute embeddings, run OCR
 and evaluate models on days they were not trained on.
@@ -128,33 +132,52 @@ and evaluate models on days they were not trained on.
 history alone reaches an AUC of 0.63; adding the frame and caption does not help yet. The most
 promising content signal is the text on the frame: on reels where a sharper 540\,px frame is
 available, its AUC rises from 0.46 to 0.63, so the app now captures that frame first.
-Information about the session, such as time of day and recent scrolling pace, makes things
-worse, because the user's mood changes from one session to the next.
+Session information (time of day, scrolling pace) hurts, as the user's mood shifts between
+sessions.
 
-\section{Potential Challenges}
-\begin{itemize}
-  \item \emph{Weak signal.} First impressions are noisy and depend on mood. Sharper on-screen
-    text, per-session thresholds and online updates should help.
-  \item \emph{Speed and battery.} Half of the quick skips happen within about a second, so
-    capturing, reading and scoring a reel must take a few hundred milliseconds, and the
-    screenshots and camera must not drain the battery.
-  \item \emph{Measuring an agent that acts.} Auto-skipped reels lose their label, so a random
-    10\% of predicted skips will be let through to measure precision.
-  \item \emph{Fragility.} The app depends on the apps' screen layouts (partly on Korean UI
-    text), and the data comes from one user.
-  \item \emph{Privacy.} Screenshots and camera frames never leave the phone.
-\end{itemize}
+\textbf{Tools and data.} On the phone: LiteRT for the encoders, ML Kit for OCR, MediaPipe
+Face Landmarker and Gesture Recognizer for hands-free mode; offline: Python with scikit-learn
+and the TensorFlow Model Optimization Toolkit. Data comes from the author's own phone, about
+300 reels a day, labeled automatically; no manual annotation is needed.
 
-\section{Expected Outcomes and Plan}
-(1)~An Android app with Learning, Auto and hands-free modes, with all inference on the phone.
-(2)~A skip model with an AUC of at least 0.70 on unseen days and at least 90\% precision in
-Auto mode. (3)~A compression study of the encoders (FP32, FP16, INT8 quantization, pruning)
-reporting size, on-device latency and accuracy before and after. (4)~Battery use per mode, a
-taste map and a report card.
-
-\textbf{Plan.} Nov.~1--7: proposal; collect data with the new capture. Nov.~8--14: hands-free
+\textbf{Steps.} Nov.~1--7: proposal; collect data with the new capture. Nov.~8--14: hands-free
 mode. Nov.~15--21: better model; run it on the phone. Nov.~22--28: compression study; Auto
 mode. Nov.~29--Dec.~5: measurements, visualization, final report.
+
+\textbf{Team.} One person: the author builds the app and models and runs the evaluation.
+
+\section{Evaluation Plan}
+\begin{itemize}
+  \item \emph{Skip prediction:} AUC on days not used for training; goal $\geq$ 0.70.
+  \item \emph{Auto mode, live:} precision (from a random 10\% of predicted skips that are let
+    through) and the undo rate; goal $\geq$ 90\% precision. Also the share of the user's quick
+    skips it takes over.
+  \item \emph{Compression:} model size, latency per reel on the phone and AUC for FP32, FP16,
+    INT8 and pruned encoders; goal: a decision within 300\,ms of a reel's arrival, losing at
+    most 0.01 AUC.
+  \item \emph{Hands-free and energy:} gesture accuracy, false triggers per 10 minutes, and
+    battery drain per hour of scrolling in each mode.
+\end{itemize}
+
+\section{Potential Challenges and Solutions}
+\begin{itemize}
+  \item \emph{Weak, mood-dependent signal.} Read on-screen text from the sharper first frame,
+    set the threshold per session, and keep updating the memory online.
+  \item \emph{Time and battery.} Half of the quick skips happen within about a second. One
+    cropped screenshot is taken as soon as the reel settles, OCR runs on that frame only, the
+    encoders run in INT8, and the camera runs only in hands-free mode at a low frame rate.
+  \item \emph{False gestures.} Natural blinks use both eyes and are short, so ``next'' needs a
+    double wink of one eye and ``like'' a thumbs-up held for half a second.
+  \item \emph{Measuring an agent that acts.} Auto-skipped reels lose their label, so a random
+    10\% of predicted skips are let through to measure precision.
+  \item \emph{App updates.} Each app has a small adapter keyed on view IDs; screen dumps make
+    it quick to fix.
+\end{itemize}
+
+\section{Expected Outcomes}
+An Android app with Learning, Auto and hands-free modes running entirely on the phone; a
+personal skip model; a before-and-after comparison of the compressed encoders; and a taste map
+and report card showing how the user spends their scrolling time.
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}

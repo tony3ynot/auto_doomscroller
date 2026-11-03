@@ -40,8 +40,8 @@ STAGES = [
 ]
 WIDTHS = [1.25, 1.75, 1.75, 1.75]
 GAP = 0.17
-BOX_H, BOX_GAP, TOP = 0.36, 0.08, 1.38
-HEIGHT = 1.62
+BOX_H, BOX_GAP, TOP = 0.33, 0.06, 1.27
+HEIGHT = 1.50
 
 
 def main() -> None:
