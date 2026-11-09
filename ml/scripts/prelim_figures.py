@@ -1,6 +1,6 @@
 """Preliminary-results figures and numbers from one export.
 
-    python ml/scripts/prelim_figures.py data/<export> --out results/<date>-prelim
+    python ml/scripts/prelim_figures.py data/<export> --out results/<date>-prelim [--until YYYY-MM-DD]
 
 Writes dwell_ecdf.pdf/png, outcomes.pdf/png, summary.md and run.json. Sized for one ACM column.
 Only aggregate numbers are written; nothing about individual reels or creators.
@@ -9,6 +9,7 @@ Only aggregate numbers are written; nothing about individual reels or creators.
 from __future__ import annotations
 
 import argparse
+from datetime import date
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ import pandas as pd
 
 from autodoom.baselines import creator_history_scores
 from autodoom.clean import clean
-from autodoom.data import load_export
+from autodoom.data import load_export, local_day
 from autodoom.figures import AQUA, BLUE, COLUMN_WIDTH_IN, GRID, INK, INK_2, NEUTRAL, ORANGE, SURFACE, use_style
 from autodoom.labels import relabel
 from autodoom.metrics import skip_auc
@@ -29,8 +30,8 @@ APPS = {"com.instagram.android": "Instagram Reels", "com.google.android.youtube"
 APP_COLOR = {"Instagram Reels": BLUE, "YouTube Shorts": ORANGE}
 
 
-def load(export: Path) -> pd.DataFrame:
-    _, reels = load_export(export)
+def load(export: Path, until: date | None) -> pd.DataFrame:
+    _, reels = load_export(export, until)
     reels = clean(reels)
     reels["label"] = relabel(reels)
     reels["app"] = reels["package"].map(APPS)
@@ -120,7 +121,7 @@ def outcomes(reels: pd.DataFrame, out: Path) -> pd.DataFrame:
 
 def summary(reels: pd.DataFrame, shares: dict[str, float], table: pd.DataFrame, out: Path) -> str:
     content = reels[~reels.is_ad & ~reels.auto_skipped]
-    days = pd.to_datetime(reels.started_at_ms, unit="ms", utc=True).dt.tz_convert("Asia/Seoul").dt.date
+    days = local_day(reels.started_at_ms)
     train, test = temporal_split(reels, test_days=1)
     labeled = test[test.label.notna()]
     is_skip = (labeled.label == "SKIP").to_numpy()
@@ -154,13 +155,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("export", type=Path)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--until", type=date.fromisoformat, help="last day to use (YYYY-MM-DD), e.g. before a test day")
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
-    reels = load(args.export)
+    reels = load(args.export, args.until)
     shares = dwell_ecdf(reels, args.out)
     table = outcomes(reels, args.out)
     print(summary(reels, shares, table, args.out))
-    write_run(args.out, "ml/scripts/prelim_figures.py", args.export, reels=len(reels))
+    write_run(args.out, "ml/scripts/prelim_figures.py", args.export, reels=len(reels), until=args.until)
 
 
 if __name__ == "__main__":

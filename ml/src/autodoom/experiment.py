@@ -3,13 +3,14 @@ how results are tabulated and drawn. The scripts in ``ml/scripts`` pick the feat
 
 from __future__ import annotations
 
+from datetime import date
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from .clean import clean
-from .data import load_export
+from .data import load_export, local_day
 from .embed import embeddings
 from .features import decision_features, knn_skip_rate, viewing_sessions
 from .labels import SKIP, relabel
@@ -18,10 +19,10 @@ from .model import skip_model
 from .split import rolling_days
 
 
-def build(export: Path, k: int, similarity: dict[str, str]) -> pd.DataFrame:
-    """All reels in time order with their label, decision-time features, and for each
-    ``similarity`` entry (feature name -> embedding model) the kNN skip share."""
-    _, reels = load_export(export)
+def build(export: Path, k: int, similarity: dict[str, str], until: date | None = None) -> pd.DataFrame:
+    """All reels in time order (up to ``until``) with their label, decision-time features, and
+    for each ``similarity`` entry (feature name -> embedding model) the kNN skip share."""
+    _, reels = load_export(export, until)
     reels = clean(reels).sort_values("started_at_ms").reset_index(drop=True)
     reels["label"] = relabel(reels)
     features = decision_features(reels)
@@ -33,7 +34,7 @@ def build(export: Path, k: int, similarity: dict[str, str]) -> pd.DataFrame:
         features[f"has_{name}"] = ~np.isnan(emb).any(axis=1)
     features["session"] = viewing_sessions(reels)
     features["has_frame"] = reels["id"].map(lambda i: (export / "thumbnails" / f"{i}_0.jpg").exists())
-    features["day"] = pd.to_datetime(reels["started_at_ms"], unit="ms", utc=True).dt.tz_convert("Asia/Seoul").dt.date
+    features["day"] = local_day(reels["started_at_ms"])
     return pd.concat([reels, features], axis=1)
 
 

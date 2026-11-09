@@ -1,6 +1,6 @@
 """First skip model: which signals predict a first-impression skip?
 
-    python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model
+    python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model [--until YYYY-MM-DD]
 
 Evaluates feature sets with rolling-origin folds (each day from the third on is a test set,
 trained on every earlier day) and writes metrics.json, summary.md, run.json and
@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date
 from pathlib import Path
 
 from autodoom.experiment import METRIC_NOTES, auc_figure, build, evaluate, table
@@ -54,9 +55,10 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--k", type=int, default=20, help="neighbours for the similarity scores")
     parser.add_argument("--c", type=float, default=1.0, help="inverse L2 strength of the logistic regression")
+    parser.add_argument("--until", type=date.fromisoformat, help="last day to use (YYYY-MM-DD), e.g. before a test day")
     args = parser.parse_args()
 
-    data = build(args.export, args.k, TASTE)
+    data = build(args.export, args.k, TASTE, args.until)
     # Scrolling back to a reel isn't a first impression, and a reel without its first frame
     # can't be scored by the frame models; drop both so every feature set sees the same reels.
     eval_set = data[data["label"].notna() & ~data["revisit"] & data["has_frame"]]
@@ -70,7 +72,7 @@ def main() -> None:
     run = write_run(
         args.out, "ml/scripts/skip_model.py", args.export, collection=[days.min(), days.max()], reels=len(data),
         labeled=int(data["label"].notna().sum()), evaluated=len(eval_set), dropped_revisit_or_no_frame=dropped,
-        k=args.k, c=args.c,
+        k=args.k, c=args.c, until=args.until,
     )
 
     lines = [
