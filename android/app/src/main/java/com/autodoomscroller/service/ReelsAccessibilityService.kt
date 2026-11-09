@@ -331,6 +331,8 @@ class ReelsAccessibilityService : AccessibilityService() {
     private fun settledBounds(adapter: TargetAppAdapter): Rect? =
         rootInActiveWindow?.takeIf { it.packageName?.toString() == adapter.packageName }
             ?.let(adapter::settledMediaBounds)
+            // Switching tabs slides the whole feed in sideways, the page and its pager together.
+            ?.takeIf { it.left >= 0 && it.right <= resources.displayMetrics.widthPixels }
 
     private fun onSettled(sequence: Int, adapter: TargetAppAdapter, bounds: Rect, elapsedMs: Long) {
         mediaBounds = bounds
