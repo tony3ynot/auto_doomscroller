@@ -39,8 +39,9 @@ FEATURE_SETS = {
     "Context + taste (MobileNetV3)": (CONTEXT + CREATOR + TASTE_MOBILENET[1:], True),
     "Context + taste (CLIP)": (CONTEXT + CREATOR + TASTE_CLIP[1:], True),
 }
-# The set the app can ship: its frame encoder is the one quantized for the phone.
-DEPLOYABLE = "Taste (MobileNetV3)"
+# The set the app can ship: its frame encoder is the one quantized for the phone, and every
+# context feature is known when the reel appears.
+DEPLOYABLE = "Context + taste (MobileNetV3)"
 
 
 def main() -> None:
