@@ -62,7 +62,8 @@ def _merge(first: dict, second: dict, gap_ms: int) -> dict:
             merged[key] = second[key]
     # A part where the button couldn't be read is stored as False, so keep a like/save seen in
     # either part; un-liking within one viewing is rare.
-    for key in ("liked", "saved", "looped", "opened_comments", "is_ad", "paid_promotion", "auto_skipped", "undone"):
+    for key in ("liked", "saved", "private_liked", "looped", "opened_comments", "is_ad", "paid_promotion",
+                "auto_skipped", "undone"):
         if key in first:
             merged[key] = bool(first[key]) or bool(second.get(key, False))
     for key in ("caption", "audio", "loop_estimate_ms"):

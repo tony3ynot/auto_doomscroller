@@ -26,6 +26,8 @@ ml/data/
 ml/models/
 *.tflite
 *.onnx
+# MediaPipe models, downloaded by the Android build
+android/app/src/main/assets/*.task
 
 .DS_Store
 

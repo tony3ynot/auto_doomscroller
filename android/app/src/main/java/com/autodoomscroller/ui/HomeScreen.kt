@@ -1,10 +1,14 @@
 package com.autodoomscroller.ui
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,10 +37,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.autodoomscroller.AppGraph
 import com.autodoomscroller.export.Exporter
+import com.autodoomscroller.handsfree.HandsFree
+import com.autodoomscroller.handsfree.HandsFreeService
 import com.autodoomscroller.service.ReelsAccessibilityService
 import com.autodoomscroller.session.SessionController
 import com.autodoomscroller.session.SessionMode
@@ -54,6 +61,11 @@ fun HomeScreen() {
     val mode by SessionController.mode.collectAsStateWithLifecycle()
     val researchMode by SessionController.researchMode.collectAsStateWithLifecycle()
     val adSkip by SessionController.adSkip.collectAsStateWithLifecycle()
+    val handsFreeOn by HandsFree.running.collectAsStateWithLifecycle()
+    val realLikes by SessionController.realLikes.collectAsStateWithLifecycle()
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted[Manifest.permission.CAMERA] == true) startHandsFree(context)
+    }
     val labeledCounts by AppGraph.reelRepository.observeLabeledCounts()
         .collectAsStateWithLifecycle(initialValue = emptyMap())
 
@@ -97,6 +109,45 @@ fun HomeScreen() {
                             )
                         }
                         Switch(checked = adSkip, onCheckedChange = { SessionController.setAdSkip(it) })
+                    }
+                }
+            }
+
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Hands-free", style = MaterialTheme.typography.titleMedium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Control the feed with the front camera")
+                            Text(
+                                "Shut your eyes for a second, or double wink: next reel · Hold a thumbs-up: like. " +
+                                    "Works in Learning and Auto mode.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Switch(
+                            checked = handsFreeOn,
+                            enabled = serviceEnabled,
+                            onCheckedChange = { on ->
+                                when {
+                                    !on -> context.stopService(Intent(context, HandsFreeService::class.java))
+                                    hasCamera(context) -> startHandsFree(context)
+                                    else -> cameraPermission.launch(
+                                        arrayOf(Manifest.permission.CAMERA, Manifest.permission.POST_NOTIFICATIONS),
+                                    )
+                                }
+                            },
+                        )
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Real likes")
+                            Text(
+                                "Off: likes are kept only in this app and don't change your recommendations",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Switch(checked = realLikes, onCheckedChange = { SessionController.setRealLikes(it) })
                     }
                 }
             }
@@ -150,6 +201,13 @@ private fun ModeOption(label: String, value: SessionMode, current: SessionMode, 
         )
         Text(label)
     }
+}
+
+private fun hasCamera(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
+private fun startHandsFree(context: Context) {
+    context.startForegroundService(Intent(context, HandsFreeService::class.java))
 }
 
 private fun isReelsServiceEnabled(context: Context): Boolean {

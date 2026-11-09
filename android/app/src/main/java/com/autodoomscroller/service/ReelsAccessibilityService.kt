@@ -3,6 +3,8 @@ package com.autodoomscroller.service
 import android.accessibilityservice.AccessibilityService
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.os.VibrationEffect
+import android.os.VibratorManager
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -17,6 +19,8 @@ import com.autodoomscroller.adapter.NodeTreeDumper
 import com.autodoomscroller.adapter.TargetAppAdapter
 import com.autodoomscroller.adapter.YouTubeShortsAdapter
 import com.autodoomscroller.autopilot.AutoPilot
+import com.autodoomscroller.handsfree.HandsFree
+import com.autodoomscroller.handsfree.HandsFreeCommand
 import com.autodoomscroller.session.SessionController
 import com.autodoomscroller.session.SessionMode
 import com.autodoomscroller.tracking.Fingerprint
@@ -49,6 +53,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private lateinit var tracker: ReelTracker
     private lateinit var capturer: ScreenCapturer
     private lateinit var autoPilot: AutoPilot
+    private lateinit var gestures: GestureDispatcher
     private var loopDetector = LoopDetector()
 
     /** Where the current reel settled on screen; its frames are cropped to this. */
@@ -69,12 +74,54 @@ class ReelsAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         capturer = ScreenCapturer(this)
-        autoPilot = AutoPilot(GestureDispatcher(this))
+        gestures = GestureDispatcher(this)
+        autoPilot = AutoPilot(gestures)
         tracker = ReelTracker(AppGraph.reelRepository, AppGraph.thumbnailStore, AppGraph.appScope)
         scope.launch {
             SessionController.mode.collect { mode ->
                 if (mode == SessionMode.OFF) stopTracking()
             }
+        }
+        scope.launch { HandsFree.commands.collect(::onHandsFree) }
+    }
+
+    /**
+     * A gesture seen by the front camera in hands-free mode. Acted on only while the reel is in
+     * front, so a late gesture can't swipe through some other screen.
+     */
+    private fun onHandsFree(command: HandsFreeCommand) {
+        val reel = tracker.currentSnapshot ?: return
+        val adapter = adapters[reel.packageName] ?: return
+        if (!HandsFree.feedVisible.value || tracker.currentPaused) return
+        if (rootInActiveWindow?.packageName?.toString() != reel.packageName) return
+        when (command) {
+            is HandsFreeCommand.Next -> {
+                val sinceDecisionMs = SystemClock.elapsedRealtime() - command.decidedAtMs
+                tracker.currentElapsedMs?.let { tracker.markHandsFreeNext((it - sinceDecisionMs).coerceAtLeast(0)) }
+                gestures.swipeUp()
+            }
+            is HandsFreeCommand.Like -> {
+                if (SessionController.realLikes.value) likeOnScreen(adapter) else tracker.markPrivateLike()
+                // A private like changes nothing on screen, so confirm it with a tap.
+                getSystemService(VibratorManager::class.java)?.defaultVibrator
+                    ?.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            }
+        }
+        if (BuildConfig.DEBUG) Log.d(TAG, "hands-free: $command on @${reel.creator}")
+    }
+
+    /**
+     * Taps the like button the way a finger would: the accessibility click action left reels
+     * unliked. The app then shows the reel as liked, and the tracker reads that like any other.
+     */
+    private fun likeOnScreen(adapter: TargetAppAdapter) {
+        val button = adapter.likeButtonBounds()
+        if (button == null) {
+            if (BuildConfig.DEBUG) Log.d(TAG, "real like: already liked, or no like button on screen")
+            return
+        }
+        gestures.tap(button.exactCenterX(), button.exactCenterY()) { done ->
+            if (BuildConfig.DEBUG) Log.d(TAG, "real like: tapped $button, ${if (done) "done" else "cancelled"}")
         }
     }
 
@@ -105,6 +152,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     private val pauseExpiry = Runnable { tracker.expirePause() }
 
     private fun pauseTracking() {
+        HandsFree.setFeedVisible(false)
         if (tracker.currentSnapshot == null || tracker.currentPaused) return
         cancelFrames()
         tracker.pause()
@@ -149,6 +197,7 @@ class ReelsAccessibilityService : AccessibilityService() {
             if (tookMs > SLOW_READ_MS) Log.d(TAG, "slow read: ${tookMs}ms")
         }
         if (BuildConfig.DEBUG) logTransitions(state)
+        HandsFree.setFeedVisible(state != FeedState.NotOnFeed)
         when (state) {
             is FeedState.OnReel -> {
                 showingOtherItem = false
@@ -351,6 +400,7 @@ class ReelsAccessibilityService : AccessibilityService() {
     }
 
     private fun stopTracking() {
+        HandsFree.setFeedVisible(false)
         cancelFrames()
         tracker.stop()
     }

@@ -81,6 +81,20 @@ def test_relabel_counts_carousel_swipes_and_comments_as_engagement():
     assert relabel(reels).tolist() == [WATCH, WATCH]
 
 
+def test_relabel_uses_the_start_of_a_hands_free_gesture():
+    # Moved on 2.6 s in by a double wink that began at 1.4 s: a first-impression skip.
+    reels = pd.DataFrame([
+        {**BASE, "dwell_ms": 2_600, "hands_free_next_ms": 1_400},
+        {**BASE, "dwell_ms": 2_600, "hands_free_next_ms": None},
+    ])
+    assert relabel(reels).tolist() == [SKIP, None]
+
+
+def test_relabel_counts_a_private_like_as_engagement():
+    reels = pd.DataFrame([{**BASE, "dwell_ms": 800, "private_liked": True}])
+    assert relabel(reels).tolist() == [WATCH]
+
+
 def test_relabel_never_skips_a_revisit():
     reels = pd.DataFrame([{**BASE, "dwell_ms": 600, "revisit": True}, {**BASE, "dwell_ms": 600, "revisit": True, "liked": True}])
     assert relabel(reels).tolist() == [None, WATCH]

@@ -47,6 +47,10 @@ class ReelTracker(
         var lastPositionMs: Long? = null
         var autoSkipped = false
         var undone = false
+        /** Time on the reel when the user began the hands-free gesture that moved past it. */
+        var handsFreeNextMs: Long? = null
+        /** Liked with a hands-free gesture, recorded here only (real likes show up in the app). */
+        var privateLiked = false
         val frames = mutableListOf<Bitmap>()
         /** When the first frame was taken, in ms on screen: the earliest moment Auto mode could decide. */
         var firstFrameMs: Long? = null
@@ -204,6 +208,18 @@ class ReelTracker(
         current?.undone = true
     }
 
+    /**
+     * The user moved on with a hands-free gesture that began [decisionMs] into the reel. The
+     * gesture itself takes a moment, so the label uses this time rather than the full dwell.
+     */
+    fun markHandsFreeNext(decisionMs: Long) {
+        current?.handsFreeNextMs = decisionMs
+    }
+
+    fun markPrivateLike() {
+        current?.privateLiked = true
+    }
+
     /** Comments of the current reel are open: engagement, and time that counts as dwell. */
     fun onCommentsOpen() {
         val active = current ?: return
@@ -251,13 +267,13 @@ class ReelTracker(
         val saved = snapshot.saved == true
         val dwellMs = endedAtMs - reel.startedAtMs - reel.pausedTotalMs
         val completed = ReelLabeler.isCompleted(reel.looped, reel.maxPositionMs, reel.durationMs, config)
-        val engaged = liked || saved || reel.openedComments || reel.carouselSwipes > 0
+        val engaged = liked || saved || reel.privateLiked || reel.openedComments || reel.carouselSwipes > 0
         val label = when {
             // Ads aren't content the user chose; their behaviour says little about taste.
             snapshot.isAd -> null
             reel.autoSkipped -> null
             reel.undone -> ReelLabel.WATCH
-            else -> ReelLabeler.label(dwellMs, reel.durationMs, completed, engaged, movedToNext, config)
+            else -> ReelLabeler.label(reel.handsFreeNextMs ?: dwellMs, reel.durationMs, completed, engaged, movedToNext, config)
                 // Scrolling back through reels already seen isn't a judgement on them.
                 ?.takeUnless { it == ReelLabel.SKIP && reel.revisit }
         }
@@ -274,6 +290,8 @@ class ReelTracker(
                     " looped=${reel.looped} liked=$liked" +
                     (if (reel.carouselSwipes > 0) " swipes=${reel.carouselSwipes}" else "") +
                     (if (reel.openedComments) " comments" else "") +
+                    (reel.handsFreeNextMs?.let { " hands-free@${it}ms" } ?: "") +
+                    (if (reel.privateLiked) " private-like" else "") +
                     " frames=${reel.frames.size}" +
                     (reel.firstFrameMs?.let { " first=${it}ms" } ?: "") +
                     (if (reel.autoSkipped) " auto-skipped" else ""),
@@ -321,6 +339,8 @@ class ReelTracker(
             label = label,
             frameCount = frames.size,
             firstFrameMs = reel.firstFrameMs,
+            handsFreeNextMs = reel.handsFreeNextMs,
+            privateLiked = reel.privateLiked,
         )
         val keepFrames = SessionController.researchMode.value
         scope.launch {

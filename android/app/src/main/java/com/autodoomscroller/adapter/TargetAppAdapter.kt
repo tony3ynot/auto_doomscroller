@@ -24,6 +24,12 @@ interface TargetAppAdapter {
      * a call costs a couple of IPC round trips; [root] is the app's active window.
      */
     fun settledMediaBounds(root: AccessibilityNodeInfo): Rect? = null
+
+    /**
+     * Where the like button of the reel from the last [read] is on screen, to tap it; null if the
+     * reel is already liked (a tap would unlike it) or the button isn't showing.
+     */
+    fun likeButtonBounds(): Rect? = null
 }
 
 sealed interface FeedState {

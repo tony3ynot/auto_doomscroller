@@ -117,6 +117,11 @@ class YouTubeShortsAdapter(private val clock: () -> Long = SystemClock::uptimeMi
         return entry.page.bounds().takeIf { it == entry.recycler.bounds() }
     }
 
+    override fun likeButtonBounds(): Rect? {
+        val button = cache?.likeButton?.takeIf { it.refresh() && it.isVisibleToUser } ?: return null
+        return button.bounds().takeIf { !button.isCheckedCompat && !it.isEmpty }
+    }
+
     /** One walk over the page; later reads only fill in what earlier ones missed. */
     private fun readDetails(entry: PageCache, page: AccessibilityNodeInfo) {
         if (page.findById(LIVE_PLAYER).isNotEmpty()) {

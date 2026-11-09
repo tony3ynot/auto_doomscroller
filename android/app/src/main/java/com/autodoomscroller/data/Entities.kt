@@ -58,4 +58,8 @@ data class ReelEntity(
     val frameCount: Int,
     /** Time on screen when the first frame was taken; null without frames or before schema v9. */
     val firstFrameMs: Long?,
+    /** Time on the reel when a hands-free gesture moved past it; null if the user swiped (schema v10). */
+    val handsFreeNextMs: Long?,
+    /** Liked with a hands-free gesture and kept only in this app. */
+    @ColumnInfo(defaultValue = "0") val privateLiked: Boolean,
 )

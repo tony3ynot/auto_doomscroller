@@ -86,10 +86,14 @@ def relabel(reels: pd.DataFrame, config: LabelConfig = LabelConfig()) -> pd.Seri
         engaged = bool(
             row.liked
             or getattr(row, "saved", False)
+            or getattr(row, "private_liked", False)
             or getattr(row, "opened_comments", False)
             or (getattr(row, "carousel_swipes", 0) or 0) > 0
         )
-        label = label_reel(row.dwell_ms, duration_ms, completed, engaged, row.moved_to_next, config)
+        # A hands-free gesture takes a moment; the decision was made when it began.
+        decision_ms = getattr(row, "hands_free_next_ms", None)
+        dwell_ms = decision_ms if _known(decision_ms) else row.dwell_ms
+        label = label_reel(dwell_ms, duration_ms, completed, engaged, row.moved_to_next, config)
         # Scrolling back through reels already seen isn't a judgement on them.
         if label == SKIP and getattr(row, "revisit", False):
             return None

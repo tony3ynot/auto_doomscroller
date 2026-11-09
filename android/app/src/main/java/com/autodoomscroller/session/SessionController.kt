@@ -23,6 +23,7 @@ object SessionController {
     private const val KEY_MODE = "mode"
     private const val KEY_RESEARCH_MODE = "research_mode"
     private const val KEY_AD_SKIP = "ad_skip"
+    private const val KEY_REAL_LIKES = "real_likes"
 
     private lateinit var prefs: SharedPreferences
 
@@ -39,6 +40,14 @@ object SessionController {
     /** Swipe past ads as soon as they are detected. Off by default. */
     val adSkip: StateFlow<Boolean> = _adSkip.asStateFlow()
 
+    private val _realLikes = MutableStateFlow(false)
+
+    /**
+     * Hands-free likes press the app's real like button. Off by default: they are then kept only
+     * in this app, so the gesture can't change what the platform recommends.
+     */
+    val realLikes: StateFlow<Boolean> = _realLikes.asStateFlow()
+
     // One worker so session start/end writes run in the order the mode changed.
     private val sessionDispatcher = Dispatchers.IO.limitedParallelism(1)
 
@@ -51,6 +60,7 @@ object SessionController {
         prefs = context.getSharedPreferences("session", Context.MODE_PRIVATE)
         _researchMode.value = prefs.getBoolean(KEY_RESEARCH_MODE, false)
         _adSkip.value = prefs.getBoolean(KEY_AD_SKIP, false)
+        _realLikes.value = prefs.getBoolean(KEY_REAL_LIKES, false)
         val savedMode = prefs.getString(KEY_MODE, null)
             ?.let { name -> SessionMode.entries.firstOrNull { it.name == name } }
             ?: SessionMode.OFF
@@ -81,5 +91,10 @@ object SessionController {
     fun setAdSkip(enabled: Boolean) {
         _adSkip.value = enabled
         prefs.edit { putBoolean(KEY_AD_SKIP, enabled) }
+    }
+
+    fun setRealLikes(enabled: Boolean) {
+        _realLikes.value = enabled
+        prefs.edit { putBoolean(KEY_REAL_LIKES, enabled) }
     }
 }

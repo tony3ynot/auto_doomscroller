@@ -1,3 +1,4 @@
+import java.net.URI
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -62,9 +63,37 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    implementation(libs.androidx.lifecycle.service)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.mediapipe.tasks.vision)
+
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
 }
+
+// MediaPipe models for hands-free mode. Downloaded on the first build instead of committed;
+// pinned to version 1 so a rebuild gets the same files.
+val mediaPipeModels = mapOf(
+    "face_landmarker.task" to
+        "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+    "gesture_recognizer.task" to
+        "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+)
+val downloadMediaPipeModels by tasks.registering {
+    val assets = layout.projectDirectory.dir("src/main/assets")
+    outputs.files(mediaPipeModels.keys.map { assets.file(it) })
+    doLast {
+        mediaPipeModels.forEach { (name, url) ->
+            val target = assets.file(name).asFile
+            if (!target.exists()) {
+                target.parentFile.mkdirs()
+                URI(url).toURL().openStream().use { input -> target.outputStream().use { input.copyTo(it) } }
+            }
+        }
+    }
+}
+tasks.named("preBuild") { dependsOn(downloadMediaPipeModels) }

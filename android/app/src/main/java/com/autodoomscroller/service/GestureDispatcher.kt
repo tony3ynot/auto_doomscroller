@@ -14,9 +14,16 @@ class GestureDispatcher(private val service: AccessibilityService) {
             moveTo(x, metrics.heightPixels * 0.75f)
             lineTo(x, metrics.heightPixels * 0.25f)
         }
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, SWIPE_DURATION_MS))
-            .build()
+        dispatch(GestureDescription.StrokeDescription(path, 0, SWIPE_DURATION_MS), onDone)
+    }
+
+    /** One tap at a point on screen, for buttons that ignore the accessibility click action. */
+    fun tap(x: Float, y: Float, onDone: (Boolean) -> Unit = {}) {
+        dispatch(GestureDescription.StrokeDescription(Path().apply { moveTo(x, y) }, 0, TAP_DURATION_MS), onDone)
+    }
+
+    private fun dispatch(stroke: GestureDescription.StrokeDescription, onDone: (Boolean) -> Unit) {
+        val gesture = GestureDescription.Builder().addStroke(stroke).build()
         val dispatched = service.dispatchGesture(
             gesture,
             object : AccessibilityService.GestureResultCallback() {
@@ -30,5 +37,6 @@ class GestureDispatcher(private val service: AccessibilityService) {
 
     private companion object {
         const val SWIPE_DURATION_MS = 250L
+        const val TAP_DURATION_MS = 50L
     }
 }

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Hands-free mode: front camera in a foreground service, a tap to confirm likes. -->
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".AutoDoomscrollerApp"
         android:allowBackup="false"
@@ -29,5 +37,10 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/reels_accessibility_service" />
         </service>
+
+        <service
+            android:name=".handsfree.HandsFreeService"
+            android:exported="false"
+            android:foregroundServiceType="camera" />
     </application>
 </manifest>

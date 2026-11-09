@@ -140,6 +140,12 @@ class InstagramReelsAdapter(private val clock: () -> Long = SystemClock::uptimeM
         return entry.page.bounds().takeIf { it == entry.pager.bounds() }
     }
 
+    override fun likeButtonBounds(): Rect? {
+        val page = cache?.page?.takeIf { it.refresh() } ?: return null
+        val button = page.findById(LIKE_BUTTON).firstOrNull { it.isVisibleToUser } ?: return null
+        return button.bounds().takeIf { !button.isSelected && !it.isEmpty }
+    }
+
     private fun isCommentSheet(root: AccessibilityNodeInfo): Boolean =
         root.firstDescendant(maxDepth = COMMENT_SHEET_MAX_DEPTH) { node ->
             node.viewIdResourceName?.substringAfter(":id/") in COMMENT_SHEET_IDS

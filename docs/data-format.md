@@ -68,6 +68,8 @@ One line per reel the user landed on.
 | `label` | `SKIP`, `WATCH` or null | Label computed on device (see below) |
 | `frame_count` | int | Frames captured for this reel |
 | `first_frame_ms` | int or null | Time on the reel when the first frame was taken, the earliest point a decision could use it; null when no frame was kept (and in rows from before schema v9) |
+| `hands_free_next_ms` | int or null | Time on the reel when the user began the hands-free gesture (a double wink or a long blink) that moved past it; null when they swiped by hand (and before schema v10) |
+| `private_liked` | bool | Liked with a hands-free thumbs-up while Real likes was off: kept only in this app, the platform never sees it |
 
 ## Labels
 
@@ -76,7 +78,7 @@ thresholds offline (`autodoom.labels.relabel`). The rule, in order:
 
 1. `is_ad` or `auto_skipped` → no label (not content the user chose, or never watched)
 2. `undone` → `WATCH` (a correction; weight it higher when training)
-3. engaged (`liked`, `saved`, `opened_comments` or `carousel_swipes` > 0) → `WATCH`
+3. engaged (`liked`, `saved`, `private_liked`, `opened_comments` or `carousel_swipes` > 0) → `WATCH`
 4. idle → no label: stayed longer than 3× `duration_ms` (at least 30 s), or longer than
    60 s when the length is unknown, without engaging. Likely the phone was left alone
 5. completed or dwell ≥ 5 s → `WATCH`
@@ -84,6 +86,10 @@ thresholds offline (`autodoom.labels.relabel`). The rule, in order:
 7. anything else → no label
 
 "Completed" means `looped`, or `max_position_ms` ≥ 90% of `duration_ms`.
+
+When a hands-free gesture moved past the reel, dwell in rules 4–6 is `hands_free_next_ms`, the
+moment the gesture began: a double wink or a long blink takes up to a second, and the user had
+decided before it ended.
 
 The label answers what Auto mode decides in the first second and a half: would the user
 swipe away on first impression? That doesn't depend on length or media type, so `WATCH`

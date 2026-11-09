@@ -3,6 +3,7 @@
 #
 #   scripts/run-debug.sh            build + install + launch
 #   scripts/run-debug.sh --logcat   ...then stream the app's debug logs
+#   scripts/run-debug.sh --logcat HandsFree ReelsService   ...only these tags
 #
 # On WSL this uses the Windows adb.exe, so a USB-connected phone works without usbipd.
 # Override with ADB=/path/to/adb.
@@ -11,7 +12,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APK="$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 APP_ID="com.autodoomscroller"
-LOG_TAGS=(ReelTracker ScreenCapturer ReelsService NodeTree)
+LOG_TAGS=(ReelTracker ScreenCapturer ReelsService NodeTree HandsFree)
 
 find_adb() {
   if [[ -n "${ADB:-}" ]]; then echo "$ADB"; return; fi
@@ -37,6 +38,8 @@ fi
 echo "Installed and launched $APP_ID."
 
 if [[ "${1:-}" == "--logcat" ]]; then
+  shift
+  (( $# )) && LOG_TAGS=("$@")
   "$ADB" logcat -c
   "$ADB" logcat -s "${LOG_TAGS[@]}"
 fi

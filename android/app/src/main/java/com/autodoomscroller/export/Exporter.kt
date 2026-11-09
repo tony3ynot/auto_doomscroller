@@ -76,4 +76,6 @@ object Exporter {
         .put("label", label?.name ?: JSONObject.NULL)
         .put("frame_count", frameCount)
         .put("first_frame_ms", firstFrameMs ?: JSONObject.NULL)
+        .put("hands_free_next_ms", handsFreeNextMs ?: JSONObject.NULL)
+        .put("private_liked", privateLiked)
 }
