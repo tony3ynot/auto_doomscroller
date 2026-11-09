@@ -15,15 +15,9 @@ import json
 from datetime import date
 from pathlib import Path
 
-from autodoom.experiment import METRIC_NOTES, auc_figure, build, evaluate, table
+from autodoom.experiment import CONTEXT, CREATOR, METRIC_NOTES, auc_figure, build, evaluate, table
 from autodoom.report import write_run
 
-CONTEXT = [
-    "youtube", "image", "carousel", "promotion", "log_likes", "log_comments", "has_caption",
-    "log_caption_len", "has_audio", "hour_sin", "hour_cos", "log_session_position",
-    "log_session_minutes", "log_prev_dwell", "recent_skip_rate",
-]
-CREATOR = ["log_creator_seen", "creator_skip_rate"]
 TASTE = {
     "frame_mobilenet": "mobilenet_v3_small",
     "frame_clip": "clip_vit_b32",

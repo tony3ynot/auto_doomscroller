@@ -18,6 +18,14 @@ from .metrics import bootstrap_ci, coverage_at_precision, group_auc, skip_auc
 from .model import skip_model
 from .split import rolling_days
 
+# Decision-time features that don't depend on the reel's content.
+CONTEXT = [
+    "youtube", "image", "carousel", "promotion", "log_likes", "log_comments", "has_caption",
+    "log_caption_len", "has_audio", "hour_sin", "hour_cos", "log_session_position",
+    "log_session_minutes", "log_prev_dwell", "recent_skip_rate",
+]
+CREATOR = ["log_creator_seen", "creator_skip_rate"]
+
 
 def build(export: Path, k: int, similarity: dict[str, str], until: date | None = None) -> pd.DataFrame:
     """All reels in time order (up to ``until``) with their label, decision-time features, and
