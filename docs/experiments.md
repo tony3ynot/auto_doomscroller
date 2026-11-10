@@ -144,6 +144,24 @@ newer export (10-20 – 10-25, 1833 reels, 933 first impressions)
 - MobileNetV3 and CLIP frame similarity: 0.56 and 0.55. Context still hurts (0.56).
 - These are the numbers in the proposal ([paper/proposal](../paper/proposal/main.tex)).
 
+## 2026-11-10 · Hands-free gestures on the phone
+
+Commit `e47539f`. Tested on the Galaxy S24 with the debug logs, on one face (the author's).
+
+- Cost: the face landmarker takes 33–67 ms and the gesture recognizer 37–95 ms per frame on the
+  CPU, so the camera is analysed about 8 times a second instead of the 10 asked for.
+- Winks are hard to tell from blinks on this face: a wink squints the other eye too. The
+  difference between the two eyes' blink scores was 0.11–0.19 during winks and 0.04–0.21 during
+  natural blinks. The eye aspect ratio from the face mesh overlaps the same way. Only
+  exaggerated winks (0.23–0.30) cleared the 0.25 margin, and a lower margin lets blinks through.
+- So "next" is now mainly a long blink: both eyes shut for 0.8–2.5 s, counted when they open.
+  In the last run 3 of 3 long blinks and 4 exaggerated double winks moved on, and about 25 s
+  of normal watching gave no command.
+- A held thumbs-up scored 0.65–0.77; the threshold went from 0.6 to 0.5. A real like didn't
+  register as an accessibility click on the button and works as a tap on it.
+- Still owed: a longer false-positive run (minutes of normal watching) and the battery cost,
+  with the other benchmarks.
+
 ## 2026-11-10 · Three weeks
 
 Results: [results/2026-11-10-prelim](../results/2026-11-10-prelim/summary.md),
