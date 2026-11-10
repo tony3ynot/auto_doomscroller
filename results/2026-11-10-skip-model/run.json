@@ -1,0 +1,16 @@
+{
+  "script": "ml/scripts/skip_model.py",
+  "git_commit": "5c4858e",
+  "export": "20261110-024405",
+  "collection": [
+    "2026-10-20",
+    "2026-11-09"
+  ],
+  "reels": 6755,
+  "labeled": 3830,
+  "evaluated": 3365,
+  "dropped_revisit_or_no_frame": 465,
+  "k": 20,
+  "c": 1.0,
+  "until": "2026-11-09"
+}

@@ -143,3 +143,48 @@ newer export (10-20 – 10-25, 1833 reels, 933 first impressions)
   one more day, content similarity adds nothing on top of it yet.
 - MobileNetV3 and CLIP frame similarity: 0.56 and 0.55. Context still hurts (0.56).
 - These are the numbers in the proposal ([paper/proposal](../paper/proposal/main.tex)).
+
+## 2026-11-10 · Three weeks
+
+Results: [results/2026-11-10-prelim](../results/2026-11-10-prelim/summary.md),
+[results/2026-11-10-skip-model](../results/2026-11-10-skip-model/summary.md),
+[results/2026-11-10-frame-text](../results/2026-11-10-frame-text/summary.md) · same scripts,
+export 10-20 – 11-09 (21 days, 6755 reels, 3365 labeled first impressions)
+
+- 11-10 is left out (`--until 2026-11-09`, Seoul time): that night's reels were skipped to test
+  the hands-free gestures, not by taste.
+- 32% of non-ad reels are left within 2 s in both apps (38% at six days). Still almost no
+  explicit engagement: 7 likes and 1 save.
+
+Skip model (six-day numbers from the proposal in brackets)
+- Creator history: 0.57 (95% CI 0.54–0.60) [0.63]. On the last day only 45% of creators had
+  been seen before, and the creator baseline there is at chance (0.49). The six-day lead didn't
+  last.
+- Taste (MobileNetV3): 0.60 (0.57–0.62) [0.62]. It ranks reels within a session best (0.61).
+- Context alone: 0.59 [0.56]. Context + taste is now the best overall, 0.64 (0.61–0.66) [0.56],
+  catching 16% of SKIPs at 80% precision. Within a session it ranks worse than Taste (0.58 against
+  0.61): context tells a session of quick skips from a patient one (time of day, recent skip
+  share, time into the session), and taste ranks the reels inside it.
+- CLIP is no better than MobileNetV3: 0.55 against 0.54 as frame similarity alone, 0.60 for
+  Taste either way.
+- The kNN memory mixes full-screen frames (before 10-25) with cropped ones. That costs nothing:
+  on the reels since 10-25, keeping only cropped frames in memory moves every set by 0.015 or
+  less (a one-off check, not kept).
+
+Text on the sharp first frame
+- 2438 labeled first impressions since 10-25 have a 540 px first frame (30% SKIP); OCR finds
+  text on 83% of them.
+- Frame text alone scores 0.55 (0.52–0.58), level with frame (0.54) and caption (0.56)
+  similarity. The 0.63 on 10-25 came from reels still on screen at 1.3 s, a subset with few
+  skips.
+- Added to Taste: 0.597 → 0.599. Added to Context + taste: 0.651 → 0.653. Within-session AUC
+  doesn't move.
+
+What it changes
+- Context + taste with MobileNetV3 is the model to beat and the one to put on the phone; the
+  skip-model figure now highlights it.
+- OCR stays off the phone. The frame text carries nothing that the creator, frame and caption
+  don't already, so model v2 needs only the frame and caption encoders.
+- Coverage is the weak point: at 80% precision the model catches about one SKIP in six, and
+  that is with each day's threshold picked after the fact. Auto mode will have to act on few
+  reels or accept more wrong skips.
