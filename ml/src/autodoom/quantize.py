@@ -1,10 +1,10 @@
 """Build the frame encoder and export LiteRT variants for the optimization study.
 
 Variants: fp32, fp16, int8_dynamic, int8_full. All take a 224x224x3 float input in [0, 255]
-and output a 576-d embedding. ``int8_full`` is calibrated on real thumbnails and keeps
-float input/output.
+and output a 576-d embedding. ``int8_full`` is calibrated on first frames spread over the
+whole collection and keeps float input/output.
 
-Requires TensorFlow (``pip install -e "ml[quant]"``). Usage::
+Requires TensorFlow and the LiteRT runtime (``pip install -e "ml[quant]"``). Usage::
 
     python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out models/
 """
@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+
+import numpy as np
 
 INPUT_SIZE = 224
 VARIANTS = ("fp32", "fp16", "int8_dynamic", "int8_full")
@@ -42,6 +44,17 @@ def load_frame(path):
     return tf.image.resize(image, (INPUT_SIZE, INPUT_SIZE))
 
 
+def calibration_frames(thumbnails: Path, n: int) -> list[Path]:
+    """``n`` first frames evenly spaced in recording order (reel ids count up).
+
+    First frames only, because that is all the encoder sees in the app, and spread out so one
+    evening's feed doesn't set the activation ranges."""
+    frames = sorted(thumbnails.glob("*_0.jpg"), key=lambda p: int(p.stem.split("_")[0]))
+    if len(frames) <= n:
+        return frames
+    return [frames[i] for i in np.linspace(0, len(frames) - 1, n).round().astype(int)]
+
+
 def convert(saved_model_dir: Path, variant: str, calibration: list[Path]) -> bytes:
     import tensorflow as tf
 
@@ -67,9 +80,24 @@ def convert(saved_model_dir: Path, variant: str, calibration: list[Path]) -> byt
     return converter.convert()
 
 
+def encode(model: Path, frames: list[Path], threads: int = 1) -> np.ndarray:
+    """Embeddings of ``frames`` from a converted model, one frame at a time as on the phone."""
+    from ai_edge_litert.interpreter import Interpreter
+
+    interpreter = Interpreter(model_path=str(model), num_threads=threads)
+    interpreter.allocate_tensors()
+    source, sink = interpreter.get_input_details()[0]["index"], interpreter.get_output_details()[0]["index"]
+    out = []
+    for path in frames:
+        interpreter.set_tensor(source, load_frame(path).numpy()[None])
+        interpreter.invoke()
+        out.append(interpreter.get_tensor(sink)[0].copy())
+    return np.stack(out)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--thumbnails", type=Path, required=True, help="calibration frames (*.jpg)")
+    parser.add_argument("--thumbnails", type=Path, required=True, help="folder of an export's frames")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--calibration-size", type=int, default=200)
     args = parser.parse_args()
@@ -78,7 +106,7 @@ def main() -> None:
     saved_model_dir = args.out / "encoder_saved_model"
     build_encoder().export(str(saved_model_dir))
 
-    calibration = sorted(args.thumbnails.glob("*.jpg"))[: args.calibration_size]
+    calibration = calibration_frames(args.thumbnails, args.calibration_size)
     for variant in VARIANTS:
         model = convert(saved_model_dir, variant, calibration)
         path = args.out / f"encoder_{variant}.tflite"

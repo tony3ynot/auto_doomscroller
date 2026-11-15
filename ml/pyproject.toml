@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-quant = ["tensorflow>=2.16"]
+quant = ["tensorflow>=2.16", "ai-edge-litert>=1.0"]
 # Frame / caption embeddings for offline experiments (autodoom.embed)
 embed = ["tensorflow>=2.16", "torch>=2.4", "open_clip_torch>=2.24", "sentence-transformers>=3.0"]
 # Text on the frame (autodoom.ocr)
