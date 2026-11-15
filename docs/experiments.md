@@ -239,3 +239,44 @@ What it changes
 - CLIP stays a reference: 0.005 over MobileNetV3 doesn't pay for a ViT-B/32 on every reel.
 - What a reel shows is a small part of the decision. The frame adds about 0.01 to the 0.63 the
   session's state and the creator already give.
+
+## 2026-11-15 · Encoder quantization, off the phone
+
+Result: [results/2026-11-15-quantization](../results/2026-11-15-quantization/summary.md) ·
+scripts: `autodoom.quantize`, `ml/scripts/quantization.py` · the same 3365 first frames
+
+The MobileNetV3-Small encoder in four LiteRT builds. The skip model is the one above, refitted
+on each build's own embeddings. Latency and energy need the phone and come next.
+
+| Encoder | Size | Cosine to FP32 (5th pct) | Same 20 neighbours | P(skip) shift | Skip AUC | Change vs FP32 |
+|---|---|---|---|---|---|---|
+| FP32 | 3.74 MB | – | – | – | 0.645 | – |
+| FP16 | 1.93 MB | 1.000 (1.000) | 99% | 0.000 | 0.645 | +0.000 (+0.000 to +0.001) |
+| INT8 dynamic range | 1.12 MB | 0.980 (0.964) | 71% | 0.013 | 0.641 | −0.004 (−0.008 to +0.001) |
+| INT8 full integer | 1.23 MB | 0.793 (0.642) | 29% | 0.032 | 0.642 | −0.003 (−0.014 to +0.006) |
+| No encoder | – | – | – | – | 0.632 | −0.013 (−0.023 to −0.002) |
+
+- Skip AUC can't rank the builds. Dropping the encoder altogether costs 0.013, which leaves
+  little for rounding its weights to take away, and every build's change has an interval that
+  includes zero. The embeddings themselves show the cost.
+- FP16 is free: half the size, and the embeddings agree to three decimals.
+- INT8 dynamic range (8-bit weights, float activations) keeps the direction of each embedding
+  but reshuffles close neighbours: 71% of a frame's 20 nearest stay.
+- INT8 full integer moves the embeddings a long way, cosine 0.79, and keeps 29% of the
+  neighbours. Calibration isn't the cause: the earlier calibration set gives 0.82 and 1000
+  frames instead of 200 give 0.75, against 0.79 (on 500 frames outside every calibration set;
+  a one-off check). 16-bit activations aren't an option, the converter has no 16-bit HARD_SWISH.
+- The skip model still holds with full integer because it is refitted on those embeddings and
+  uses only their 8 broadest directions. Anything that leans on fine distances, like the
+  nearest-neighbour scores, would feel it.
+- LiteRT FP32 reproduces the Keras model exactly (cosine 1.000000 on every frame), so the
+  cached embeddings of the earlier entries are the FP32 build's.
+- Full-integer calibration now takes 200 first frames spread evenly over the collection. It
+  used to take the first 200 files in name order, later frames of the reel included.
+
+What it changes
+- FP16 is the default to ship unless the phone shows an integer build is clearly faster.
+- Embeddings from different builds don't mix. The head has to be fitted on embeddings from
+  the build that runs, which it is when training happens on the phone.
+- The comparison to report is size, latency and energy against embedding fidelity, with skip
+  AUC as the check that the task doesn't suffer.
