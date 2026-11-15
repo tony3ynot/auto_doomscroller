@@ -206,3 +206,36 @@ What it changes
 - Coverage is the weak point: at 80% precision the model catches about one SKIP in six, and
   that is with each day's threshold picked after the fact. Auto mode will have to act on few
   reels or accept more wrong skips.
+
+## 2026-11-15 · A learned head for the frame
+
+Result: [results/2026-11-15-frame-head](../results/2026-11-15-frame-head/summary.md) ·
+script: `ml/scripts/frame_head.py` · the same three weeks, 3365 labeled first impressions
+
+Context + taste was taken apart to see what each encoder buys, since each one is a model the
+phone has to run. Changes are against context + creator on the same reels, with a paired
+bootstrap; that is much tighter than setting two intervals side by side.
+
+- Context + creator alone: 0.632 (0.61–0.66). The frame similarity score adds −0.001 (−0.005
+  to +0.003) and the caption similarity score +0.006 (−0.003 to +0.014). Nearly all of
+  Context + taste's 0.635 came from the part that needs no encoder.
+- The same frame embedding as a learned head, 8 principal components into the logistic
+  regression: +0.013 (+0.002 to +0.023), 0.645. Within-session AUC 0.58 against 0.57.
+- 4, 16 and 32 components give +0.008, +0.009 and +0.005, with intervals that reach zero. Eight
+  was the best of four tries on this data, so read +0.013 as the generous end.
+- Putting all 576 dimensions in, shrunk, does worse than leaving the frame out (0.60–0.63; a
+  one-off check, not kept).
+- CLIP as a head: +0.018 (+0.007 to +0.028), and it ranks within a session better (0.60). A
+  caption head: +0.011 (−0.002 to +0.023), within-session 0.60.
+- Coverage at 80% precision stays at 12–14% for every head; the base has 14%.
+
+What it changes
+- The model for the phone is context + creator + 8 principal components of the MobileNetV3
+  embedding. Projection, scaling and regression fold into one weight vector, and there is no
+  memory of past embeddings to keep and search. This replaces Context + taste from the
+  three-weeks entry.
+- No caption encoder on the phone. multilingual-e5-small has about 118 M parameters, over a
+  hundred times the frame encoder's, for a gain the data can't tell from zero.
+- CLIP stays a reference: 0.005 over MobileNetV3 doesn't pay for a ViT-B/32 on every reel.
+- What a reel shows is a small part of the decision. The frame adds about 0.01 to the 0.63 the
+  session's state and the creator already give.
