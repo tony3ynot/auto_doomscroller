@@ -46,26 +46,45 @@ def build(export: Path, k: int, similarity: dict[str, str], until: date | None =
     return pd.concat([reels, features], axis=1)
 
 
-def evaluate(data: pd.DataFrame, features: list[str], fitted: bool, c: float = 1.0) -> dict:
-    """Fit on earlier days, score each test day. Headline: mean of the per-day AUCs.
+def with_embedding(data: pd.DataFrame, name: str, vectors: np.ndarray) -> tuple[pd.DataFrame, list[str]]:
+    """``data`` with ``vectors`` (one row per reel) as columns ``<name>_0``, ...; and their names."""
+    columns = [f"{name}_{j}" for j in range(vectors.shape[1])]
+    return pd.concat([data, pd.DataFrame(np.asarray(vectors), index=data.index, columns=columns)], axis=1), columns
 
-    Unfitted sets have one feature, used directly as the score.
+
+def fold_scores(data: pd.DataFrame, features: list[str], fitted: bool, c: float = 1.0,
+                embedding: list[str] = (), components: int = 8) -> pd.DataFrame:
+    """P(skip) for every reel of every test day, from a model fitted on the earlier days.
+
+    One row per reel: ``y`` (is SKIP), ``p``, ``fold``, ``day``, ``session``. Unfitted sets have
+    one feature, used directly as the score. ``embedding`` columns enter a fitted model through
+    their leading principal components (``skip_model``).
     """
-    folds, ys, ps, days, sessions = [], [], [], [], []
-    for day, train, test in rolling_days(data):
-        y_train, y_test = (train["label"] == SKIP).to_numpy(), (test["label"] == SKIP).to_numpy()
-        if not features:
+    parts = []
+    for fold, (day, train, test) in enumerate(rolling_days(data), start=1):
+        y_train = (train["label"] == SKIP).to_numpy()
+        columns = [*features, *embedding]
+        if not columns:
             p = np.full(len(test), y_train.mean())
         elif not fitted:
             p = test[features[0]].fillna(y_train.mean()).to_numpy()
         else:
-            p = skip_model(c).fit(train[features], y_train).predict_proba(test[features])[:, 1]
-        point = coverage_at_precision(y_test, p, 0.8)
-        folds.append({"test_day": str(day), "n": len(test), "skip_share": float(y_test.mean()),
-                      "auc": skip_auc(y_test, p) if features else 0.5, "coverage_at_80": point.coverage})
-        ys.append(y_test), ps.append(p), days.append(np.full(len(test), len(folds)))
-        sessions.append(test["session"].to_numpy())
-    y, p, day, session = map(np.concatenate, (ys, ps, days, sessions))
+            model = skip_model(c, embedding, components)
+            p = model.fit(train[columns], y_train).predict_proba(test[columns])[:, 1]
+        parts.append(pd.DataFrame({"y": (test["label"] == SKIP).to_numpy(), "p": p, "fold": fold,
+                                   "day": str(day), "session": test["session"].to_numpy()}))
+    return pd.concat(parts, ignore_index=True)
+
+
+def summarize(scores: pd.DataFrame, features: list[str]) -> dict:
+    """Headline numbers for ``fold_scores``: mean of the per-day AUCs, within-session AUC, coverage."""
+    folds = []
+    for day, test in scores.groupby("fold", sort=True):
+        y, p = test["y"].to_numpy(), test["p"].to_numpy()
+        folds.append({"test_day": test["day"].iloc[0], "n": len(test), "skip_share": float(y.mean()),
+                      "auc": skip_auc(y, p) if features else 0.5,
+                      "coverage_at_80": coverage_at_precision(y, p, 0.8).coverage})
+    y, p, day, session = (scores[c].to_numpy() for c in ("y", "p", "fold", "session"))
     result = {"features": features, "folds": folds, "auc": float(np.mean([f["auc"] for f in folds])),
               "coverage_at_80": float(np.mean([f["coverage_at_80"] for f in folds]))}
     if features:
@@ -76,17 +95,53 @@ def evaluate(data: pd.DataFrame, features: list[str], fitted: bool, c: float = 1
     return result
 
 
-def table(results: dict) -> list[str]:
-    """Markdown rows: AUC and within-session AUC with intervals, coverage at 80% precision."""
-    lines = ["| Feature set | AUC | Within-session AUC | Coverage @80% |", "|---|---|---|---|"]
+def evaluate(data: pd.DataFrame, features: list[str], fitted: bool, c: float = 1.0) -> dict:
+    """Fit on earlier days, score each test day. Headline: mean of the per-day AUCs."""
+    return summarize(fold_scores(data, features, fitted, c), features)
+
+
+def auc_change(scores: pd.DataFrame, reference: pd.DataFrame, n: int = 2000) -> dict:
+    """AUC of ``scores`` minus that of ``reference`` on the same reels, with a paired interval.
+
+    Both models are scored on each resample, so what the reels have in common cancels: the
+    interval is far tighter than the two models' own intervals suggest.
+    """
+    if not (scores["y"].to_numpy() == reference["y"].to_numpy()).all():
+        raise ValueError("the two score tables cover different reels")
+    y, day = scores["y"].to_numpy(), scores["fold"].to_numpy()
+    a, b = scores["p"].to_numpy(), reference["p"].to_numpy()
+
+    def difference(y, a, b, day):
+        return group_auc(y, a, day) - group_auc(y, b, day)
+
+    return {"auc_change": difference(y, a, b, day),
+            "auc_change_ci95": bootstrap_ci(difference, y, a, b, day, strata=day, n=n)}
+
+
+def table(results: dict, change: str | None = None) -> list[str]:
+    """Markdown rows: AUC and within-session AUC with intervals, coverage at 80% precision.
+
+    ``change`` adds a column of that name with each set's ``auc_change`` (see ``auc_change``).
+    """
+    head = ["Feature set", "AUC", "Within-session AUC", "Coverage @80%"] + ([change] if change else [])
+    lines = ["| " + " | ".join(head) + " |", "|---" * len(head) + "|"]
     for name, r in results.items():
-        cells = []
+        cells = [name]
         for key in ("auc", "session_auc"):
             ci = r.get(f"{key}_ci95")
             cells.append(f"{r[key]:.3f} ({ci[0]:.2f}–{ci[1]:.2f})" if ci else (f"{r[key]:.3f}" if key in r else "–"))
-        cov = f"{r['coverage_at_80']:.0%}" if r["features"] else "–"
-        lines.append(f"| {name} | {cells[0]} | {cells[1]} | {cov} |")
+        cells.append(f"{r['coverage_at_80']:.0%}" if r["features"] else "–")
+        if change:
+            cells.append(signed_interval(r["auc_change"], r["auc_change_ci95"]) if "auc_change" in r else "–")
+        lines.append("| " + " | ".join(cells) + " |")
     return lines
+
+
+def signed_interval(value: float, ci: tuple[float, float]) -> str:
+    def signed(x: float) -> str:
+        return f"{round(x, 3) + 0.0:+.3f}".replace("-", "−")  # no "-0.000"
+
+    return f"{signed(value)} ({signed(ci[0])} to {signed(ci[1])})"
 
 
 METRIC_NOTES = [

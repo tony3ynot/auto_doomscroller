@@ -31,7 +31,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.embed` | First-frame, caption and frame-text embeddings, cached inside the export folder |
 | `autodoom.ocr` | Text on the frame (EasyOCR standing in for ML Kit), raw results cached, UI text filtered |
 | `autodoom.experiment` | Dataset, rolling-fold scoring, result table and AUC chart shared by the scripts |
-| `autodoom.model` | The skip model (logistic regression) |
+| `autodoom.model` | The skip model (logistic regression, with a few principal components of the frame embedding) |
 | `autodoom.report` | `run.json` records for result folders |
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
 | `autodoom.baselines` | Majority and creator-history baselines |
@@ -45,6 +45,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `prelim_figures.py` | Collection statistics and the two preliminary figures |
 | `skip_model.py` | Feature-set comparison for the skip model |
 | `frame_text.py` | Whether text read off the frame adds to the skip model |
+| `frame_head.py` | Frame similarity against a learned head on the frame embedding |
 
 From the repo root, with exports in `data/`:
 
@@ -54,6 +55,7 @@ python -m autodoom.embed data/<export>                 # once per export; cached
 python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model
 python -m autodoom.ocr data/<export> --source first    # and --source hires; slow, cached
 python ml/scripts/frame_text.py data/<export> --out results/<date>-frame-text
+python ml/scripts/frame_head.py data/<export> --out results/<date>-frame-head
 ```
 
 ## Typical loop
