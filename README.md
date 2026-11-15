@@ -75,8 +75,10 @@ right.
 - Raw video and audio are never stored. Thumbnails are kept only if you turn on research
   mode, and you can delete them, the log, or everything at any time.
 - Only the screens of supported apps are read.
-- It never likes, comments, follows or shares on your behalf. Auto mode and ad skip only
-  swipe.
+- Hands-free mode is off until you turn it on. It uses the front camera only while a
+  supported feed is on screen, and its frames are analysed in memory and never stored.
+- It never comments, follows or shares on your behalf, and likes only when you hold up a
+  thumbs-up with real likes turned on. Auto mode and ad skip only swipe.
 
 ## Performance
 
@@ -165,7 +167,7 @@ See [ml/README.md](ml/README.md) for the analysis loop and the quantization scri
 - [x] Reel logger for Instagram Reels (transitions, dwell, likes, frames, text)
 - [x] YouTube Shorts
 - [x] Offline baselines and first personal model ([experiment log](docs/experiments.md))
-- [ ] Hands-free mode: camera gestures to skip and like
+- [x] Hands-free mode: camera gestures to skip and like
 - [ ] On-device inference and live prediction overlay
 - [ ] Auto mode with corrections
 - [ ] Encoder quantization and on-device benchmarks
