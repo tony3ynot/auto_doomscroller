@@ -70,7 +70,8 @@ right.
 
 ## Privacy
 
-- Everything runs on the device. Nothing is uploaded and there is no account or server.
+- Everything runs on the device. The app has no internet permission, so nothing can be
+  uploaded, and there is no account or server.
 - Raw video and audio are never stored. Thumbnails are kept only if you turn on research
   mode, and you can delete them, the log, or everything at any time.
 - Only the screens of supported apps are read.

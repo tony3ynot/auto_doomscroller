@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!--
+    No network access: what the app sees of the screen and the camera can't leave the phone.
+    MediaPipe brings a usage-statistics uploader that asks for INTERNET; it is taken out here,
+    and so is any other library's request. ACCESS_NETWORK_STATE stays: it only reads whether
+    a network is up, and that uploader's job scheduling fails without it on Android 14.
+    -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
 
     <!-- Hands-free mode: front camera in a foreground service, a tap to confirm likes. -->
     <uses-feature android:name="android.hardware.camera.front" android:required="false" />
