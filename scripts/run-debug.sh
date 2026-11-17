@@ -4,9 +4,6 @@
 #   scripts/run-debug.sh            build + install + launch
 #   scripts/run-debug.sh --logcat   ...then stream the app's debug logs
 #   scripts/run-debug.sh --logcat HandsFree ReelsService   ...only these tags
-#
-# On WSL this uses the Windows adb.exe, so a USB-connected phone works without usbipd.
-# Override with ADB=/path/to/adb.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,26 +11,13 @@ APK="$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 APP_ID="com.autodoomscroller"
 LOG_TAGS=(ReelTracker ScreenCapturer ReelsService NodeTree HandsFree)
 
-find_adb() {
-  if [[ -n "${ADB:-}" ]]; then echo "$ADB"; return; fi
-  if command -v adb.exe >/dev/null; then command -v adb.exe; return; fi
-  local win_sdk="${WINDOWS_ANDROID_SDK:-}"
-  if [[ -n "$win_sdk" && -x "$win_sdk/platform-tools/adb.exe" ]]; then echo "$win_sdk/platform-tools/adb.exe"; return; fi
-  command -v adb
-}
-
-ADB="$(find_adb)"
-apk_arg="$APK"
-[[ "$ADB" == *.exe ]] && apk_arg="$(wslpath -w "$APK")"
+source "$ROOT/scripts/adb.sh"
 
 (cd "$ROOT/android" && ./gradlew assembleDebug)
 
-if ! "$ADB" get-state >/dev/null 2>&1; then
-  echo "No device found. Connect the phone with USB debugging on, then run: $ADB devices" >&2
-  exit 1
-fi
 
-"$ADB" install -r "$apk_arg"
+require_device
+"$ADB" install -r "$(adb_path "$APK")"
 "$ADB" shell am start -n "$APP_ID/.MainActivity" >/dev/null
 echo "Installed and launched $APP_ID."
 
