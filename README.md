@@ -82,18 +82,24 @@ right.
 
 ## Performance
 
-The frame encoder runs on every reel, on the critical path of the skip decision, so it is
-built in several precisions and benchmarked on device. All variants are evaluated on the
-same held-out days.
+The frame encoder (MobileNetV3-Small) runs on every reel, on the critical path of the skip
+decision, so it is built in four precisions and compared on the same held-out days and on
+the phone.
 
-| Encoder variant | Size | Latency / frame | Decision p95 | Skip AUC | Coverage @ 90% precision |
-|---|---|---|---|---|---|
-| FP32 | – | – | – | – | – |
-| FP16 | – | – | – | – | – |
-| INT8 dynamic range | – | – | – | – | – |
-| INT8 full integer | – | – | – | – | – |
+| Encoder variant | Size | Latency / frame | Embedding cosine to FP32 | Skip AUC |
+|---|---|---|---|---|
+| FP32 | 3.74 MB | 21.8 ms | – | 0.645 |
+| **FP16** | 1.93 MB | 22.5 ms | 1.000 | 0.645 |
+| INT8 dynamic range | 1.12 MB | 23.7 ms | 0.980 | 0.641 |
+| INT8 full integer | 1.23 MB | 18.0 ms | 0.793 | 0.642 |
 
-Battery drain and device temperature over a 30-minute session are recorded alongside.
+Latency is the median on a Galaxy S24 (CPU, one thread, LiteRT) with a second of idle before
+each run, as when a new reel appears; run back to back the same builds take 2.3–3.6 ms. The
+skip AUCs are within noise of each other. FP16 is the one the app uses: half the size of FP32
+with the same embeddings and the same speed. The reasoning is in the
+[experiment log](docs/experiments.md).
+
+Decision latency in the app and battery drain over a session are still to be measured.
 
 ## Repository layout
 
