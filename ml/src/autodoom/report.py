@@ -19,8 +19,12 @@ def git_commit() -> str:
     return f"{head}-dirty" if dirty else head
 
 
-def write_run(out: Path, script: str, export: Path, **details) -> dict:
-    """Write ``run.json``: which script, commit and export produced the folder, plus settings."""
-    run = {"script": script, "git_commit": git_commit(), "export": Path(export).name, **details}
+def write_run(out: Path, script: str, export: Path | None = None, **details) -> dict:
+    """Write ``run.json``: which script, commit and export (if it read one) produced the folder,
+    plus settings."""
+    run = {"script": script, "git_commit": git_commit()}
+    if export is not None:
+        run["export"] = Path(export).name
+    run |= details
     (out / "run.json").write_text(json.dumps(run, indent=2, default=str) + "\n")
     return run

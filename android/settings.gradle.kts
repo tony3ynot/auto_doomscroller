@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "auto_doomscroller"
 include(":app")
+include(":benchmark")

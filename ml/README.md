@@ -36,6 +36,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
 | `autodoom.baselines` | Majority and creator-history baselines |
 | `autodoom.quantize` | MobileNetV3 frame encoder → FP32 / FP16 / INT8 LiteRT variants, and running them |
+| `autodoom.phone` | Reading what the on-device benchmark reports back |
 
 Scripts in `scripts/` write a result folder under `results/` at the repo root
 (see [results/README.md](../results/README.md)):
@@ -47,6 +48,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `frame_text.py` | Whether text read off the frame adds to the skip model |
 | `frame_head.py` | Frame similarity against a learned head on the frame embedding |
 | `quantization.py` | Size, embedding fidelity and skip AUC of each encoder variant |
+| `encoder_latency.py` | Latency of each encoder variant on a phone, from `scripts/benchmark-encoder.sh` |
 
 From the repo root, with exports in `data/`:
 
@@ -61,6 +63,7 @@ python ml/scripts/frame_head.py data/<export> --out results/<date>-frame-head
 pip install -e "ml[quant]"
 python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out ml/models
 python ml/scripts/quantization.py data/<export> --models ml/models --out results/<date>-quantization
+scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected; about twelve minutes
 ```
 
 ## Typical loop
