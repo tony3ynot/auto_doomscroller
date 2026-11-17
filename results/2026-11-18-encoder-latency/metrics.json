@@ -1,0 +1,357 @@
+{
+  "measurements": [
+    {
+      "encoder": "FP32",
+      "delegate": "cpu",
+      "threads": 1,
+      "load_ms": 77.273,
+      "first_ms": 4.249,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.596,
+        "p95_ms": 3.64,
+        "min_ms": 3.54,
+        "max_ms": 3.791
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 21.799,
+        "p95_ms": 25.324,
+        "min_ms": 4.254,
+        "max_ms": 25.786
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP32",
+      "delegate": "cpu",
+      "threads": 2,
+      "load_ms": 37.556,
+      "first_ms": 4.415,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.582,
+        "p95_ms": 3.62,
+        "min_ms": 3.529,
+        "max_ms": 3.816
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 23.056,
+        "p95_ms": 25.261,
+        "min_ms": 5.686,
+        "max_ms": 26.185
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP32",
+      "delegate": "cpu",
+      "threads": 4,
+      "load_ms": 38.603,
+      "first_ms": 4.236,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.593,
+        "p95_ms": 3.635,
+        "min_ms": 3.539,
+        "max_ms": 3.769
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 23.428,
+        "p95_ms": 25.861,
+        "min_ms": 4.313,
+        "max_ms": 26.63
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP32",
+      "delegate": "gpu",
+      "threads": 1,
+      "load_ms": 1296.144,
+      "first_ms": 7.372,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.887,
+        "p95_ms": 4.876,
+        "min_ms": 3.1,
+        "max_ms": 7.996
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 15.873,
+        "p95_ms": 19.727,
+        "min_ms": 6.491,
+        "max_ms": 21.73
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP16",
+      "delegate": "cpu",
+      "threads": 1,
+      "load_ms": 53.054,
+      "first_ms": 4.263,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.586,
+        "p95_ms": 3.659,
+        "min_ms": 3.532,
+        "max_ms": 3.745
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 22.466,
+        "p95_ms": 25.209,
+        "min_ms": 4.55,
+        "max_ms": 26.408
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP16",
+      "delegate": "cpu",
+      "threads": 2,
+      "load_ms": 43.314,
+      "first_ms": 4.258,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.566,
+        "p95_ms": 3.61,
+        "min_ms": 3.514,
+        "max_ms": 3.813
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 22.179,
+        "p95_ms": 25.092,
+        "min_ms": 5.048,
+        "max_ms": 26.13
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP16",
+      "delegate": "cpu",
+      "threads": 4,
+      "load_ms": 36.904,
+      "first_ms": 4.133,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.594,
+        "p95_ms": 3.632,
+        "min_ms": 3.535,
+        "max_ms": 3.808
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 22.993,
+        "p95_ms": 25.647,
+        "min_ms": 4.973,
+        "max_ms": 29.616
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "FP16",
+      "delegate": "gpu",
+      "threads": 1,
+      "load_ms": 1811.162,
+      "first_ms": 12.818,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.652,
+        "p95_ms": 4.449,
+        "min_ms": 2.268,
+        "max_ms": 6.634
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 18.004,
+        "p95_ms": 19.705,
+        "min_ms": 14.515,
+        "max_ms": 19.922
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 dynamic range",
+      "delegate": "cpu",
+      "threads": 1,
+      "load_ms": 27.181,
+      "first_ms": 6.98,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.886,
+        "p95_ms": 2.926,
+        "min_ms": 2.84,
+        "max_ms": 3.085
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 23.678,
+        "p95_ms": 26.711,
+        "min_ms": 5.549,
+        "max_ms": 27.603
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 dynamic range",
+      "delegate": "cpu",
+      "threads": 2,
+      "load_ms": 41.164,
+      "first_ms": 11.904,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.955,
+        "p95_ms": 4.967,
+        "min_ms": 2.906,
+        "max_ms": 9.967
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 23.416,
+        "p95_ms": 25.474,
+        "min_ms": 9.324,
+        "max_ms": 25.765
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 dynamic range",
+      "delegate": "cpu",
+      "threads": 4,
+      "load_ms": 42.314,
+      "first_ms": 10.142,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.732,
+        "p95_ms": 4.479,
+        "min_ms": 2.654,
+        "max_ms": 13.354
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 22.64,
+        "p95_ms": 30.816,
+        "min_ms": 9.757,
+        "max_ms": 34.99
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 dynamic range",
+      "delegate": "gpu",
+      "threads": 1,
+      "load_ms": 1292.844,
+      "first_ms": 6.31,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.681,
+        "p95_ms": 4.203,
+        "min_ms": 2.94,
+        "max_ms": 5.227
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 17.107,
+        "p95_ms": 19.712,
+        "min_ms": 5.841,
+        "max_ms": 20.084
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 full integer",
+      "delegate": "cpu",
+      "threads": 1,
+      "load_ms": 71.781,
+      "first_ms": 5.866,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.269,
+        "p95_ms": 2.313,
+        "min_ms": 2.232,
+        "max_ms": 2.431
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 18.032,
+        "p95_ms": 21.254,
+        "min_ms": 3.201,
+        "max_ms": 21.917
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 full integer",
+      "delegate": "cpu",
+      "threads": 2,
+      "load_ms": 36.21,
+      "first_ms": 2.724,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.283,
+        "p95_ms": 2.311,
+        "min_ms": 2.246,
+        "max_ms": 2.418
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 18.512,
+        "p95_ms": 20.956,
+        "min_ms": 3.166,
+        "max_ms": 22.12
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 full integer",
+      "delegate": "cpu",
+      "threads": 4,
+      "load_ms": 43.25,
+      "first_ms": 2.686,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 2.271,
+        "p95_ms": 2.314,
+        "min_ms": 2.233,
+        "max_ms": 2.445
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 17.955,
+        "p95_ms": 20.814,
+        "min_ms": 3.102,
+        "max_ms": 23.021
+      },
+      "thermal_status": 0
+    },
+    {
+      "encoder": "INT8 full integer",
+      "delegate": "gpu",
+      "threads": 1,
+      "load_ms": 1825.423,
+      "first_ms": 7.842,
+      "back_to_back": {
+        "n": 200,
+        "median_ms": 3.833,
+        "p95_ms": 4.909,
+        "min_ms": 2.772,
+        "max_ms": 6.327
+      },
+      "paced": {
+        "n": 40,
+        "median_ms": 16.623,
+        "p95_ms": 20.027,
+        "min_ms": 8.29,
+        "max_ms": 20.114
+      },
+      "thermal_status": 0
+    }
+  ],
+  "failures": []
+}

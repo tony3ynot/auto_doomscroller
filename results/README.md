@@ -4,6 +4,9 @@ One folder per experiment run, named `<date>-<what>`. Each holds the numbers and
 script wrote, plus `run.json`: the script, the commit it ran at, the export it read, and its
 settings. Re-running that script on the same export reproduces the folder.
 
+Folders measured on a phone record the device and the model files instead of an export, and
+their timings vary from run to run.
+
 The exports themselves stay off git (they are one person's viewing history), so only
 aggregate results are here: counts, shares, metrics, and charts of those. Nothing names a
 reel, caption or creator.

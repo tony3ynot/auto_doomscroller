@@ -1,0 +1,20 @@
+{
+  "script": "ml/scripts/encoder_latency.py",
+  "git_commit": "5d49344",
+  "device": {
+    "model": "SM-S921N",
+    "soc": "Samsung s5e9945",
+    "android": "17",
+    "cores": 10,
+    "litert": "1.4.2",
+    "runtime": "2.22.0-dev0+selfbuilt",
+    "warmup_runs": 20,
+    "pace_ms": 1000
+  },
+  "sha256": {
+    "FP32": "dd330217dd4470ed9cdb7524fa004d78f0cc863bab83a7e5bd498e94d96614ef",
+    "FP16": "648ad3ca8fb2b6e6932139306546c49f24218d1ab79e424dabb46d7c34fe2573",
+    "INT8 dynamic range": "158f3155e5a75ceb2c16eeab8a7bfa5a7102501955bcc1f9c13dccbd001b00e6",
+    "INT8 full integer": "add0ca1127afc91ed23f37ac10aa408125aa5f62596a66f4fc62bd477aaf5bbb"
+  }
+}

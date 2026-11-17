@@ -280,3 +280,45 @@ What it changes
   the build that runs, which it is when training happens on the phone.
 - The comparison to report is size, latency and energy against embedding fidelity, with skip
   AUC as the check that the task doesn't suffer.
+
+## 2026-11-18 · Encoder latency on the phone
+
+Result: [results/2026-11-18-encoder-latency](../results/2026-11-18-encoder-latency/summary.md) ·
+scripts: `scripts/benchmark-encoder.sh`, `ml/scripts/encoder_latency.py` · Galaxy S24
+(SM-S921N, Exynos 2400), Android 17, LiteRT 1.4.2
+
+The same four files as in the entry above (the checksums match), timed by an instrumented
+test: one 224 px frame in, one embedding out. Each build runs 200 times back to back, then
+40 times with a second of idle before each run, which is how the app will use it, once per
+reel. Median, 95th percentile in brackets; CPU, one thread.
+
+| Encoder | Size | Back to back | Paced |
+|---|---|---|---|
+| FP32 | 3.74 MB | 3.6 ms (3.6) | 21.8 ms (25.3) |
+| FP16 | 1.93 MB | 3.6 ms (3.7) | 22.5 ms (25.2) |
+| INT8 dynamic range | 1.12 MB | 2.9 ms (2.9) | 23.7 ms (26.7) |
+| INT8 full integer | 1.23 MB | 2.3 ms (2.3) | 18.0 ms (21.3) |
+
+- Back to back, full integer is the fastest: 2.3 ms against 3.6 ms, with dynamic range at
+  2.9 ms. FP16 runs exactly as fast as FP32.
+- Paced, the same inference takes 18–24 ms, about six times longer. The benchmark doesn't
+  show why; presumably the cores have slowed down after a second with nothing to do. The
+  fastest paced run of a build is 3–10 ms, so some runs catch the phone still awake.
+- Paced, the three other builds are within 2 ms of each other and full integer is about 4 ms
+  ahead. A first run with 20 paced samples put all four at 14–17 ms in another order (a
+  one-off, not kept), so the paced figure moves by several milliseconds between runs.
+- Threads make no difference: 1, 2 and 4 give the same times both ways.
+- GPU: building the interpreter takes 1.3–1.8 s against 27–77 ms on the CPU. Back to back it
+  is no faster (3.7–3.9 ms); paced it takes 16–18 ms.
+- The phone reported no thermal throttling during the run. It was on USB power.
+
+What it changes
+- Latency doesn't pick the build. The decision has about 1.5 s, and the encoder takes about
+  20 ms of it whichever build runs. Full integer's 4 ms doesn't pay for embeddings at cosine
+  0.79. FP16 ships: half the size of FP32, the same embeddings, the same speed.
+- CPU, one thread. The GPU would save about 5 ms per reel for more than a second at start-up
+  and another native library in the app.
+- Encoder timings are to be quoted paced. The back-to-back 3.6 ms understates the cost of a
+  reel six times over.
+- Not in these numbers: scaling the screenshot to 224 px and the head. The time from a reel
+  appearing to a decision is measured in the app, once it runs the model.
