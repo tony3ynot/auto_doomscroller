@@ -62,4 +62,8 @@ data class ReelEntity(
     val handsFreeNextMs: Long?,
     /** Liked with a hands-free gesture and kept only in this app. */
     @ColumnInfo(defaultValue = "0") val privateLiked: Boolean,
+    /** The skip model's P(skip) from the first frame; null when no prediction was made (schema v11). */
+    val skipProbability: Float?,
+    /** Time on the reel when that prediction was ready, the moment Auto mode could act on it. */
+    val predictedAtMs: Long?,
 )

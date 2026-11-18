@@ -66,6 +66,7 @@ fun HomeScreen() {
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         if (granted[Manifest.permission.CAMERA] == true) startHandsFree(context)
     }
+    val trainedOn by AppGraph.skipPredictor.trainedOn.collectAsStateWithLifecycle()
     val labeledCounts by AppGraph.reelRepository.observeLabeledCounts()
         .collectAsStateWithLifecycle(initialValue = emptyMap())
 
@@ -97,9 +98,13 @@ fun HomeScreen() {
                     Text("Mode", style = MaterialTheme.typography.titleMedium)
                     ModeOption("Off", SessionMode.OFF, mode, enabled = true)
                     ModeOption("Learning: watch normally, it learns", SessionMode.LEARNING, mode, serviceEnabled)
-                    // TODO: enable once PreferenceModel is trained (300+ labeled reels and the
-                    //  validation precision target is met).
+                    // TODO: enable once the skip model meets the validation precision target.
                     ModeOption("Auto: skips what you would skip", SessionMode.AUTO, mode, enabled = false)
+                    Text(
+                        trainedOn?.let { "Skip model: trained on ${it.reels} reels up to ${it.lastDay}. It predicts, and records its predictions." }
+                            ?: "No skip model yet, so no predictions.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Skip ads")

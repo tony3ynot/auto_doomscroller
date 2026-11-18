@@ -76,10 +76,13 @@ class ReelsAccessibilityService : AccessibilityService() {
         capturer = ScreenCapturer(this)
         gestures = GestureDispatcher(this)
         autoPilot = AutoPilot(gestures)
-        tracker = ReelTracker(AppGraph.reelRepository, AppGraph.thumbnailStore, AppGraph.appScope)
+        tracker = ReelTracker(
+            AppGraph.reelRepository, AppGraph.thumbnailStore, AppGraph.appScope,
+            onReelFinished = AppGraph.skipPredictor::onReelFinished,
+        )
         scope.launch {
             SessionController.mode.collect { mode ->
-                if (mode == SessionMode.OFF) stopTracking()
+                if (mode == SessionMode.OFF) stopTracking() else AppGraph.skipPredictor.refreshModel(AppGraph.appScope)
             }
         }
         scope.launch { HandsFree.commands.collect(::onHandsFree) }
@@ -306,8 +309,32 @@ class ReelsAccessibilityService : AccessibilityService() {
         loopDetector = LoopDetector()
         waitUntilSettled(sequence, adapter)
         if (BuildConfig.DEBUG) frameHandler.postDelayed({ dumpTree(sequence) }, TREE_DUMP_DELAY_MS)
-        // TODO: after the first frame, run FeatureExtractor + PreferenceModel and pass
-        //  P(skip) to autoPilot.onPrediction(); call tracker.markAutoSkipped() if it skips.
+    }
+
+    /**
+     * The reel's first frame is in: ask the skip model, and in Auto mode let it act. The frame
+     * is read here and now, because the tracker recycles it when the reel ends; the encoder
+     * then runs off the main thread. Ads are left to the ad rule, and a reel the user scrolled
+     * back to is never skipped for them.
+     */
+    private fun predictSkip(sequence: Int, frame: Bitmap) {
+        val reel = tracker.currentSnapshot ?: return
+        val startedAtMs = tracker.currentStartedAtMs ?: return
+        if (reel.isAd) return
+        val inputs = AppGraph.skipPredictor.inputs(reel, startedAtMs, frame) ?: return
+        scope.launch {
+            val prediction = AppGraph.skipPredictor.predictSkip(inputs) ?: return@launch
+            val elapsedMs = tracker.currentElapsedMs
+            if (tracker.currentSequence != sequence || elapsedMs == null) return@launch
+            tracker.setPrediction(sequence, prediction.skipProbability, elapsedMs)
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "P(skip)=${"%.2f".format(prediction.skipProbability)} @${reel.creator} " +
+                    "${elapsedMs}ms in, encoder ${prediction.encoderMs}ms")
+            }
+            val current = tracker.currentSnapshot ?: return@launch
+            if (current.isAd || tracker.currentRevisit || tracker.currentUndone) return@launch
+            if (autoPilot.onPrediction(current, prediction.skipProbability)) tracker.markAutoSkipped()
+        }
     }
 
     /**
@@ -374,6 +401,7 @@ class ReelsAccessibilityService : AccessibilityService() {
                 return@capture
             }
             loopDetector.add(fingerprint, elapsedMs)?.let(tracker::onLoopEstimated)
+            if (keep && !tracker.currentHasFrames) predictSkip(sequence, thumbnail)
             if (keep) tracker.addFrame(sequence, thumbnail, elapsedMs) else thumbnail.recycle()
             hiRes?.let { tracker.setHiResFrame(sequence, it) }
         }

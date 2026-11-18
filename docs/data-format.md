@@ -70,6 +70,8 @@ One line per reel the user landed on.
 | `first_frame_ms` | int or null | Time on the reel when the first frame was taken, the earliest point a decision could use it; null when no frame was kept (and in rows from before schema v9) |
 | `hands_free_next_ms` | int or null | Time on the reel when the user began the hands-free gesture (a double wink or a long blink) that moved past it; null when they swiped by hand (and before schema v10) |
 | `private_liked` | bool | Liked with a hands-free thumbs-up while Real likes was off: kept only in this app, the platform never sees it |
+| `p_skip` | float or null | The skip model's P(skip) for this reel, computed on the phone from its first frame and the viewing history; null when no prediction was made: no model loaded, no frame, an ad (and before schema v11) |
+| `predicted_at_ms` | int or null | Time on the reel when that prediction was ready, the moment Auto mode could act on it |
 
 ## Labels
 

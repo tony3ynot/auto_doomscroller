@@ -27,6 +27,8 @@ class ReelTracker(
     private val scope: CoroutineScope,
     private val clock: () -> Long = System::currentTimeMillis,
     private val config: LabelConfig = LabelConfig(),
+    /** Called with every reel that gets stored, as it ends. */
+    private val onReelFinished: (ReelEntity) -> Unit = {},
 ) {
     private class ActiveReel(
         var snapshot: ReelSnapshot,
@@ -55,6 +57,8 @@ class ReelTracker(
         /** When the first frame was taken, in ms on screen: the earliest moment Auto mode could decide. */
         var firstFrameMs: Long? = null
         var hiResFrame: Bitmap? = null
+        var skipProbability: Float? = null
+        var predictedAtMs: Long? = null
         var pausedAtMs: Long? = null
         var pausedTotalMs = 0L
     }
@@ -74,6 +78,13 @@ class ReelTracker(
 
     val currentSnapshot: ReelSnapshot?
         get() = current?.snapshot
+
+    val currentStartedAtMs: Long?
+        get() = current?.startedAtMs
+
+    /** The user scrolled back to this reel. */
+    val currentRevisit: Boolean
+        get() = current?.revisit == true
 
     /** Time the current reel has been on screen, excluding pauses; null while paused. */
     val currentElapsedMs: Long?
@@ -180,6 +191,13 @@ class ReelTracker(
         } else {
             frame.recycle()
         }
+    }
+
+    /** The skip model's answer for the reel, ready [elapsedMs] into it. */
+    fun setPrediction(sequence: Int, skipProbability: Float, elapsedMs: Long) {
+        val active = current?.takeIf { it.sequence == sequence } ?: return
+        active.skipProbability = skipProbability
+        active.predictedAtMs = elapsedMs
     }
 
     /**
@@ -294,6 +312,7 @@ class ReelTracker(
                     (if (reel.privateLiked) " private-like" else "") +
                     " frames=${reel.frames.size}" +
                     (reel.firstFrameMs?.let { " first=${it}ms" } ?: "") +
+                    (reel.skipProbability?.let { " p(skip)=${"%.2f".format(it)}@${reel.predictedAtMs}ms" } ?: "") +
                     (if (reel.autoSkipped) " auto-skipped" else ""),
             )
         }
@@ -341,7 +360,10 @@ class ReelTracker(
             firstFrameMs = reel.firstFrameMs,
             handsFreeNextMs = reel.handsFreeNextMs,
             privateLiked = reel.privateLiked,
+            skipProbability = reel.skipProbability,
+            predictedAtMs = reel.predictedAtMs,
         )
+        onReelFinished(entity)
         val keepFrames = SessionController.researchMode.value
         scope.launch {
             val reelId = repository.saveReel(entity)

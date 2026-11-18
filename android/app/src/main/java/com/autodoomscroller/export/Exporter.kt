@@ -78,4 +78,6 @@ object Exporter {
         .put("first_frame_ms", firstFrameMs ?: JSONObject.NULL)
         .put("hands_free_next_ms", handsFreeNextMs ?: JSONObject.NULL)
         .put("private_liked", privateLiked)
+        .put("p_skip", skipProbability?.toDouble() ?: JSONObject.NULL)
+        .put("predicted_at_ms", predictedAtMs ?: JSONObject.NULL)
 }

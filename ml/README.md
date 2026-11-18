@@ -67,6 +67,7 @@ python ml/scripts/quantization.py data/<export> --models ml/models --out results
 scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected; about twelve minutes
 
 python -m autodoom.deploy data/<export> --out ml/models/skip_model.json
+scripts/push-model.sh                                  # the app picks it up when a session starts
 ```
 
 ## Typical loop
