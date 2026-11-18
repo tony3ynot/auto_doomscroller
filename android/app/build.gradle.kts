@@ -73,6 +73,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     testImplementation(libs.junit)
+    // android.jar's org.json is a stub in unit tests; this is the real one.
+    testImplementation(libs.json)
 }
 
 // MediaPipe models for hands-free mode. Downloaded on the first build instead of committed;
