@@ -8,6 +8,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// The frame encoder comes from `python -m autodoom.quantize` and is not in git. A build made
+// without it works, it just makes no skip predictions.
+val frameEncoder = layout.buildDirectory.dir("frame-encoder")
+val copyFrameEncoder by tasks.registering(Copy::class) {
+    from(rootProject.layout.projectDirectory.dir("../ml/models")) { include("encoder_fp16.tflite") }
+    into(frameEncoder)
+}
+tasks.named("preBuild") { dependsOn(copyFrameEncoder) }
+
 android {
     namespace = "com.autodoomscroller"
     compileSdk = 36
@@ -40,6 +49,10 @@ android {
         compose = true
         buildConfig = true
     }
+
+    sourceSets["main"].assets.srcDir(frameEncoder)
+    // Stored uncompressed so the encoder can be memory-mapped.
+    androidResources { noCompress += "tflite" }
 }
 
 kotlin {
@@ -67,6 +80,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.mediapipe.tasks.vision)
+    implementation(libs.litert)
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
