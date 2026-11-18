@@ -36,6 +36,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
 | `autodoom.baselines` | Majority and creator-history baselines |
 | `autodoom.quantize` | MobileNetV3 frame encoder → FP32 / FP16 / INT8 LiteRT variants, and running them |
+| `autodoom.deploy` | Fits the skip model on an export and writes the weight file the app reads |
 | `autodoom.phone` | Reading what the on-device benchmark reports back |
 
 Scripts in `scripts/` write a result folder under `results/` at the repo root
@@ -64,6 +65,8 @@ pip install -e "ml[quant]"
 python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out ml/models
 python ml/scripts/quantization.py data/<export> --models ml/models --out results/<date>-quantization
 scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected; about twelve minutes
+
+python -m autodoom.deploy data/<export> --out ml/models/skip_model.json
 ```
 
 ## Typical loop

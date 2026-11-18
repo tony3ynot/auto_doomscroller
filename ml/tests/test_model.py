@@ -46,3 +46,16 @@ def test_a_model_does_not_differ_from_itself():
     change = auc_change(scores, scores, n=50)
     assert change["auc_change"] == 0
     assert change["auc_change_ci95"] == (0, 0)
+
+
+def test_folded_weights_reproduce_the_fitted_model():
+    from autodoom.deploy import fold, predict
+
+    data, columns = reels()
+    model = skip_model(embedding=columns, components=3).fit(data[["noise", *columns]], data["label"] == "SKIP")
+    weights = fold(model, ["noise"])
+    assert len(weights["weights"]) == len(weights["impute"]) == 1
+    assert len(weights["frame_weights"]) == len(columns)
+    folded = predict(weights, data[["noise"]].to_numpy(), data[columns].to_numpy())
+    assert np.isnan(data["noise"]).any()
+    np.testing.assert_allclose(folded, model.predict_proba(data[["noise", *columns]])[:, 1], atol=1e-12)
