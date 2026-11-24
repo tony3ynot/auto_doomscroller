@@ -37,7 +37,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.baselines` | Majority and creator-history baselines |
 | `autodoom.quantize` | MobileNetV3 frame encoder → FP32 / FP16 / INT8 LiteRT variants, and running them |
 | `autodoom.deploy` | Fits the skip model on an export and writes the weight file the app reads |
-| `autodoom.phone` | Reading what the on-device benchmark reports back |
+| `autodoom.phone` | Reading what the phone reports back: the encoder benchmark, battery statistics |
 
 Scripts in `scripts/` write a result folder under `results/` at the repo root
 (see [results/README.md](../results/README.md)):
@@ -52,6 +52,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `learning_curve.py` | Skip AUC against the days of use the model has had |
 | `quantization.py` | Size, embedding fidelity and skip AUC of each encoder variant |
 | `encoder_latency.py` | Latency of each encoder variant on a phone, from `scripts/benchmark-encoder.sh` |
+| `battery.py` | Battery cost of a session by app setting, from the phone's battery statistics |
 
 From the repo root, with exports in `data/`:
 
@@ -72,6 +73,8 @@ scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected;
 
 python -m autodoom.deploy data/<export> --out ml/models/skip_model.json
 scripts/push-model.sh                                  # the app picks it up when a session starts
+
+python ml/scripts/battery.py data/battery --out results/<date>-battery
 ```
 
 ## Typical loop
