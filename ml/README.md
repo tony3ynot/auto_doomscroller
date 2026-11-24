@@ -48,6 +48,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `skip_model.py` | Feature-set comparison for the skip model |
 | `frame_text.py` | Whether text read off the frame adds to the skip model |
 | `frame_head.py` | Frame similarity against a learned head on the frame embedding |
+| `learning_curve.py` | Skip AUC against the days of use the model has had |
 | `quantization.py` | Size, embedding fidelity and skip AUC of each encoder variant |
 | `encoder_latency.py` | Latency of each encoder variant on a phone, from `scripts/benchmark-encoder.sh` |
 
@@ -60,6 +61,7 @@ python ml/scripts/skip_model.py data/<export> --out results/<date>-skip-model
 python -m autodoom.ocr data/<export> --source first    # and --source hires; slow, cached
 python ml/scripts/frame_text.py data/<export> --out results/<date>-frame-text
 python ml/scripts/frame_head.py data/<export> --out results/<date>-frame-head
+python ml/scripts/learning_curve.py data/<export> --out results/<date>-learning-curve
 
 pip install -e "ml[quant]"
 python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out ml/models
