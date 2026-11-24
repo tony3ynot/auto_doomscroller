@@ -59,3 +59,39 @@ def test_folded_weights_reproduce_the_fitted_model():
     folded = predict(weights, data[["noise"]].to_numpy(), data[columns].to_numpy())
     assert np.isnan(data["noise"]).any()
     np.testing.assert_allclose(folded, model.predict_proba(data[["noise", *columns]])[:, 1], atol=1e-12)
+
+
+def scores_with(p_and_y, days=3):
+    """Out-of-fold scores with the same reels on each of ``days`` test days."""
+    rows = [{"fold": fold, "p": p, "y": y} for fold in range(1, days + 1) for p, y in p_and_y]
+    return pd.DataFrame(rows)
+
+
+def test_auto_threshold_is_the_lowest_one_that_is_right_often_enough():
+    from autodoom.deploy import auto_threshold
+
+    # Above 0.7: nine skips in ten. Between 0.5 and 0.7: half.
+    reels = [(0.75, True)] * 9 + [(0.75, False)] + [(0.55, True)] * 5 + [(0.55, False)] * 5 + [(0.2, False)] * 10
+    auto = auto_threshold(scores_with(reels), days=3, precision=0.9, min_skips=30)
+    assert auto["threshold"] == 0.6  # the grid's first step past the mixed reels at 0.55
+    assert auto["precision"] == 0.9 and auto["skips"] == 30
+    assert auto["coverage"] == 27 / 42
+
+
+def test_auto_threshold_stays_locked_without_enough_days_reels_or_precision():
+    from autodoom.deploy import auto_threshold
+
+    good = [(0.75, True)] * 9 + [(0.75, False)] + [(0.2, False)] * 10
+    assert auto_threshold(scores_with(good, days=2), days=3, min_skips=10) is None  # too few days
+    assert auto_threshold(scores_with(good), days=3, min_skips=40) is None  # too few reels above
+    poor = [(0.95, True)] * 8 + [(0.95, False)] * 2 + [(0.2, False)] * 10
+    assert auto_threshold(scores_with(poor), days=3, min_skips=10) is None  # 80% right isn't enough
+
+
+def test_auto_threshold_ignores_how_the_model_did_long_ago():
+    from autodoom.deploy import auto_threshold
+
+    early = pd.DataFrame([{"fold": 1, "p": 0.9, "y": False}] * 50)
+    late = scores_with([(0.75, True)] * 10 + [(0.2, False)] * 5, days=3).assign(fold=lambda d: d["fold"] + 1)
+    auto = auto_threshold(pd.concat([early, late]), days=3, min_skips=30)
+    assert auto["threshold"] == 0.5 and auto["precision"] == 1.0

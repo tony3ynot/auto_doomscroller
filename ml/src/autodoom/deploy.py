@@ -11,6 +11,10 @@ and regression are all linear, so they fold into
 where ``x`` are the decision-time features (a missing one replaced by ``impute[i]``) and ``e``
 is the L2-normalised frame embedding. The app computes ``x`` and ``e`` itself and needs
 nothing else. The file is fitted on one person's viewing history: it stays out of git.
+
+The file also says whether Auto mode may act on the model, and from which probability
+(``auto_threshold``). That is decided on the most recent days, each scored by a model that
+had only seen the days before it.
 """
 
 from __future__ import annotations
@@ -26,6 +30,10 @@ from sklearn.pipeline import Pipeline
 
 FORMAT = 1
 ENCODER = "mobilenet_v3_small"
+AUTO_DAYS = 14
+AUTO_PRECISION = 0.9
+AUTO_MIN_SKIPS = 30
+AUTO_THRESHOLDS = tuple(round(0.5 + 0.05 * i, 2) for i in range(10))  # 0.50 ... 0.95
 
 
 def fold(model: Pipeline, features: Sequence[str]) -> dict:
@@ -46,6 +54,27 @@ def fold(model: Pipeline, features: Sequence[str]) -> dict:
     }
 
 
+def auto_threshold(scores, days: int = AUTO_DAYS, precision: float = AUTO_PRECISION,
+                   min_skips: int = AUTO_MIN_SKIPS) -> dict | None:
+    """The lowest P(skip) from which Auto mode would have been right often enough, or None.
+
+    ``scores`` are ``experiment.fold_scores``: every test day scored by a model fitted on the
+    days before it. Only the last ``days`` test days count, because the probabilities of a
+    model with little data behind it can't be trusted, however confident. A threshold needs at
+    least ``min_skips`` reels above it, ``precision`` of them really skipped.
+    """
+    recent = scores[scores["fold"] > scores["fold"].max() - days]
+    y, p = recent["y"].to_numpy(), recent["p"].to_numpy()
+    if recent["fold"].nunique() < days or not y.any():
+        return None
+    for threshold in AUTO_THRESHOLDS:
+        above = p >= threshold
+        if above.sum() >= min_skips and y[above].mean() >= precision:
+            return {"threshold": threshold, "precision": float(y[above].mean()), "skips": int(above.sum()),
+                    "coverage": float(y[above].sum() / y.sum()), "days": days}
+    return None
+
+
 def predict(weights: dict, x: np.ndarray, frame: np.ndarray) -> np.ndarray:
     """P(skip) from a weight file, the way the app computes it. ``x`` may hold NaN."""
     x = np.where(np.isnan(x), np.asarray(weights["impute"]), x)
@@ -55,7 +84,7 @@ def predict(weights: dict, x: np.ndarray, frame: np.ndarray) -> np.ndarray:
 
 def main() -> None:
     from .embed import embeddings
-    from .experiment import CONTEXT, CREATOR, build, with_embedding
+    from .experiment import CONTEXT, CREATOR, build, fold_scores, with_embedding
     from .labels import SKIP
     from .model import skip_model
     from .report import git_commit
@@ -83,13 +112,18 @@ def main() -> None:
     if drift > 1e-6:  # the embeddings are float32, and so is scikit-learn's projection of them
         raise SystemExit(f"folded weights disagree with the fitted model by {drift:g}")
 
+    auto = auto_threshold(fold_scores(train, features, True, args.c, columns, args.components))
+    weights["auto_threshold"] = auto["threshold"] if auto else None
     weights["trained"] = {"commit": git_commit(), "encoder": ENCODER, "reels": len(train), "skip_share": float(y.mean()),
-                          "first_day": str(train["day"].min()), "last_day": str(train["day"].max())}
+                          "first_day": str(train["day"].min()), "last_day": str(train["day"].max()), "auto": auto}
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(weights) + "\n")
     print(f"{args.out}: {len(train)} labeled first impressions, {train['day'].min()} – {train['day'].max()}, "
           f"{y.mean():.0%} skipped; P(skip) on them from {folded.min():.2f} to {folded.max():.2f}, "
           f"median {np.median(folded):.2f}")
+    print(f"Auto mode: from P(skip) {auto['threshold']:.2f}, {auto['precision']:.0%} of {auto['skips']} right and "
+          f"{auto['coverage']:.0%} of the skips, on the last {auto['days']} days" if auto
+          else f"Auto mode: locked, no threshold is {AUTO_PRECISION:.0%} right on the last {AUTO_DAYS} days")
 
 
 if __name__ == "__main__":
