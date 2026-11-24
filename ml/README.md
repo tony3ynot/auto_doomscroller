@@ -48,6 +48,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `skip_model.py` | Feature-set comparison for the skip model |
 | `frame_text.py` | Whether text read off the frame adds to the skip model |
 | `frame_head.py` | Frame similarity against a learned head on the frame embedding |
+| `live_predictions.py` | The predictions the phone made: same as offline, right about the user, ready in time |
 | `learning_curve.py` | Skip AUC against the days of use the model has had |
 | `quantization.py` | Size, embedding fidelity and skip AUC of each encoder variant |
 | `encoder_latency.py` | Latency of each encoder variant on a phone, from `scripts/benchmark-encoder.sh` |
@@ -62,6 +63,7 @@ python -m autodoom.ocr data/<export> --source first    # and --source hires; slo
 python ml/scripts/frame_text.py data/<export> --out results/<date>-frame-text
 python ml/scripts/frame_head.py data/<export> --out results/<date>-frame-head
 python ml/scripts/learning_curve.py data/<export> --out results/<date>-learning-curve
+python ml/scripts/live_predictions.py data/<export> --model ml/models/skip_model.json --out results/<date>-live-predictions
 
 pip install -e "ml[quant]"
 python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out ml/models
