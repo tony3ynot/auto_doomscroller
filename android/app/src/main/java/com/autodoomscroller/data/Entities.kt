@@ -17,6 +17,16 @@ data class SessionEntity(
     val deviceModel: String,
 )
 
+/**
+ * The frame encoder's embedding of a reel's first frame (L2-normalised float32, little-endian),
+ * kept so the skip model can be refitted on the phone. Schema v12.
+ */
+@Entity(tableName = "frame_embeddings")
+class FrameEmbeddingEntity(
+    @PrimaryKey val reelId: Long,
+    val vector: ByteArray,
+)
+
 /** One reel as the user experienced it. Field meanings are documented in docs/data-format.md. */
 @Entity(tableName = "reels", indices = [Index("sessionId")])
 data class ReelEntity(

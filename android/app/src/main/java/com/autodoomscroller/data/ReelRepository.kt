@@ -1,6 +1,8 @@
 package com.autodoomscroller.data
 
 import android.os.Build
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,6 +22,20 @@ class ReelRepository(private val dao: ReelDao) {
     suspend fun allSessions(): List<SessionEntity> = dao.allSessions()
 
     suspend fun allReels(): List<ReelEntity> = dao.allReels()
+
+    suspend fun saveEmbedding(reelId: Long, embedding: FloatArray) {
+        val bytes = ByteBuffer.allocate(embedding.size * Float.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        bytes.asFloatBuffer().put(embedding)
+        dao.insertEmbedding(FrameEmbeddingEntity(reelId, bytes.array()))
+    }
+
+    /** Frame embeddings by reel id. */
+    suspend fun allEmbeddings(): Map<Long, FloatArray> = dao.allEmbeddings().associate { row ->
+        val floats = ByteBuffer.wrap(row.vector).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer()
+        row.reelId to FloatArray(floats.remaining()).also { floats.get(it) }
+    }
+
+    suspend fun embeddedReelIds(): Set<Long> = dao.embeddedReelIds().toSet()
 
     suspend fun deleteAll() = dao.deleteAll()
 }

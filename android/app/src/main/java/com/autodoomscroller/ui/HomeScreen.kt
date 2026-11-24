@@ -103,12 +103,13 @@ fun HomeScreen() {
                     ModeOption("Auto: skips what you would skip", SessionMode.AUTO, mode, serviceEnabled && autoThreshold != null)
                     Text(
                         when {
-                            trainedOn == null -> "No skip model yet, so no predictions."
+                            trainedOn == null ->
+                                "No skip model yet. This phone fits one after a session, once it has seen enough reels."
                             autoThreshold == null ->
-                                "Skip model: trained on ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
+                                "Skip model: fitted on this phone from ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
                                     "Not sure enough yet for Auto mode; it predicts and records its predictions."
                             else ->
-                                "Skip model: trained on ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
+                                "Skip model: fitted on this phone from ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
                                     "Auto mode skips a reel when P(skip) is ${"%.2f".format(autoThreshold)} or more."
                         },
                         style = MaterialTheme.typography.bodySmall,
@@ -189,6 +190,7 @@ fun HomeScreen() {
                         }) { Text("Export") }
                         Spacer(Modifier.width(8.dp))
                         OutlinedButton(onClick = {
+                            AppGraph.skipPredictor.forget(AppGraph.appScope)
                             AppGraph.appScope.launch {
                                 AppGraph.reelRepository.deleteAll()
                                 AppGraph.thumbnailStore.deleteAll()

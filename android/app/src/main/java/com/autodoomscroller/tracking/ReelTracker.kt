@@ -59,6 +59,7 @@ class ReelTracker(
         var hiResFrame: Bitmap? = null
         var skipProbability: Float? = null
         var predictedAtMs: Long? = null
+        var embedding: FloatArray? = null
         var pausedAtMs: Long? = null
         var pausedTotalMs = 0L
     }
@@ -193,11 +194,15 @@ class ReelTracker(
         }
     }
 
-    /** The skip model's answer for the reel, ready [elapsedMs] into it. */
-    fun setPrediction(sequence: Int, skipProbability: Float, elapsedMs: Long) {
+    /**
+     * The first frame's [embedding], kept for refitting the model, and the skip model's answer
+     * for the reel if there is a model yet, ready [elapsedMs] into it.
+     */
+    fun setPrediction(sequence: Int, embedding: FloatArray, skipProbability: Float?, elapsedMs: Long) {
         val active = current?.takeIf { it.sequence == sequence } ?: return
+        active.embedding = embedding
         active.skipProbability = skipProbability
-        active.predictedAtMs = elapsedMs
+        active.predictedAtMs = elapsedMs.takeIf { skipProbability != null }
     }
 
     /**
@@ -365,8 +370,10 @@ class ReelTracker(
         )
         onReelFinished(entity)
         val keepFrames = SessionController.researchMode.value
+        val embedding = reel.embedding
         scope.launch {
             val reelId = repository.saveReel(entity)
+            embedding?.let { repository.saveEmbedding(reelId, it) }
             if (keepFrames) {
                 frames.forEachIndexed { index, frame -> thumbnails.save(reelId, index, frame) }
                 hiResFrame?.let { thumbnails.saveHiRes(reelId, it) }

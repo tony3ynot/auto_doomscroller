@@ -2,6 +2,7 @@ package com.autodoomscroller.data
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,18 @@ interface ReelDao {
     @Query("SELECT * FROM reels ORDER BY startedAtMs")
     suspend fun allReels(): List<ReelEntity>
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEmbedding(embedding: FrameEmbeddingEntity)
+
+    @Query("SELECT * FROM frame_embeddings")
+    suspend fun allEmbeddings(): List<FrameEmbeddingEntity>
+
+    @Query("SELECT reelId FROM frame_embeddings")
+    suspend fun embeddedReelIds(): List<Long>
+
+    @Query("DELETE FROM frame_embeddings")
+    suspend fun deleteAllEmbeddings()
+
     @Query("DELETE FROM reels")
     suspend fun deleteAllReels()
 
@@ -36,6 +49,7 @@ interface ReelDao {
 
     @Transaction
     suspend fun deleteAll() {
+        deleteAllEmbeddings()
         deleteAllReels()
         deleteAllSessions()
     }

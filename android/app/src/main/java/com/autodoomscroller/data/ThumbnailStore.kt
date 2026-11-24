@@ -26,6 +26,9 @@ class ThumbnailStore(private val dir: File) {
 
     fun all(): List<File> = dir.listFiles()?.filter { it.extension == "jpg" }.orEmpty()
 
+    /** The first frame kept for a reel, if research mode was on when it was watched. */
+    fun firstFrame(reelId: Long): File? = File(dir, "${reelId}_0.jpg").takeIf { it.exists() }
+
     fun deleteAll() {
         dir.deleteRecursively()
     }

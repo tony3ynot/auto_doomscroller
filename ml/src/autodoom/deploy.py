@@ -1,4 +1,4 @@
-"""Fit the skip model on an export and write it as the weight file the app reads.
+"""Fit the skip model on an export and write it as weights, in the app's file format.
 
     python -m autodoom.deploy data/<export> --out ml/models/skip_model.json [--until YYYY-MM-DD]
 
@@ -9,8 +9,10 @@ and regression are all linear, so they fold into
     logit = bias + sum(weights[i] * x[i]) + sum(frame_weights[j] * e[j])
 
 where ``x`` are the decision-time features (a missing one replaced by ``impute[i]``) and ``e``
-is the L2-normalised frame embedding. The app computes ``x`` and ``e`` itself and needs
-nothing else. The file is fitted on one person's viewing history: it stays out of git.
+is the L2-normalised frame embedding. The app fits the same model on the phone
+(``SkipTrainer.kt``) and never reads a file from here; this is its offline twin, for checking
+the phone's arithmetic and for analysis, and both are tested against the fixtures in
+``ml/tests/fixtures``. The file is fitted on one person's viewing history: it stays out of git.
 
 The file also says whether Auto mode may act on the model, and from which probability
 (``auto_threshold``). That is decided on the most recent days, each scored by a model that

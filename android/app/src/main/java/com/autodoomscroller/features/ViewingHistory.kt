@@ -36,31 +36,39 @@ class ViewingHistory(private val zone: ZoneId = ZoneId.systemDefault()) {
         private set
 
     /** One value per name in [NAMES], NaN where the app couldn't read it, for a reel that began at [startedAtMs]. */
-    fun features(reel: ReelSnapshot, startedAtMs: Long): FloatArray {
+    fun features(reel: ReelSnapshot, startedAtMs: Long): FloatArray = features(
+        reel.packageName, reel.creator, reel.caption, reel.audio, reel.mediaType, reel.paidPromotion,
+        reel.likeCount, reel.commentCount, startedAtMs,
+    )
+
+    fun features(
+        packageName: String, creator: String?, caption: String?, audio: String?, mediaType: MediaType?,
+        paidPromotion: Boolean, likeCount: Long?, commentCount: Long?, startedAtMs: Long,
+    ): FloatArray {
         enterSession(startedAtMs)
         val local = Instant.ofEpochMilli(startedAtMs).atZone(zone)
         val hour = local.hour + local.minute / 60.0
         val globalRate = (skipsTotal + 1.0) / (labeledTotal + 2.0)
-        val creator = creators[reel.packageName to reel.creator]
-        val caption = reel.caption.orEmpty()
+        val stats = creators[packageName to creator]
+        val text = caption.orEmpty()
         return doubleArrayOf(
-            flag(reel.packageName == YOUTUBE),
-            flag(reel.mediaType == MediaType.IMAGE),
-            flag(reel.mediaType == MediaType.CAROUSEL),
-            flag(reel.paidPromotion),
-            reel.likeCount?.let { log1p(it.toDouble()) } ?: Double.NaN,
-            reel.commentCount?.let { log1p(it.toDouble()) } ?: Double.NaN,
-            flag(caption.isNotEmpty()),
-            log1p(caption.codePointCount(0, caption.length).toDouble()),
-            flag(!reel.audio.isNullOrEmpty()),
+            flag(packageName == YOUTUBE),
+            flag(mediaType == MediaType.IMAGE),
+            flag(mediaType == MediaType.CAROUSEL),
+            flag(paidPromotion),
+            likeCount?.let { log1p(it.toDouble()) } ?: Double.NaN,
+            commentCount?.let { log1p(it.toDouble()) } ?: Double.NaN,
+            flag(text.isNotEmpty()),
+            log1p(text.codePointCount(0, text.length).toDouble()),
+            flag(!audio.isNullOrEmpty()),
             sin(2 * PI * hour / 24),
             cos(2 * PI * hour / 24),
             log1p(position.toDouble()),
             log1p((startedAtMs - (sessionStartMs ?: startedAtMs)) / 60_000.0),
             previousDwell,
             (recentSkips.count { it } + PRIOR_STRENGTH * globalRate) / (recentSkips.size + PRIOR_STRENGTH),
-            log1p((creator?.seen ?: 0).toDouble()),
-            ((creator?.skips ?: 0) + PRIOR_STRENGTH * globalRate) / ((creator?.labeled ?: 0) + PRIOR_STRENGTH),
+            log1p((stats?.seen ?: 0).toDouble()),
+            ((stats?.skips ?: 0) + PRIOR_STRENGTH * globalRate) / ((stats?.labeled ?: 0) + PRIOR_STRENGTH),
         ).let { values -> FloatArray(values.size) { values[it].toFloat() } }
     }
 

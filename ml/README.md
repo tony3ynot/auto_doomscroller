@@ -36,7 +36,7 @@ On Colab: `!pip install -e "auto_doomscroller/ml[dev,quant]"` after cloning.
 | `autodoom.metrics` | Skip AUC and coverage at a fixed precision |
 | `autodoom.baselines` | Majority and creator-history baselines |
 | `autodoom.quantize` | MobileNetV3 frame encoder → FP32 / FP16 / INT8 LiteRT variants, and running them |
-| `autodoom.deploy` | Fits the skip model on an export and writes the weight file the app reads |
+| `autodoom.deploy` | The skip model as weights, in the app's file format; the offline twin of the app's trainer |
 | `autodoom.phone` | Reading what the phone reports back: the encoder benchmark, battery statistics |
 
 Scripts in `scripts/` write a result folder under `results/` at the repo root
@@ -71,8 +71,7 @@ python -m autodoom.quantize --thumbnails data/<export>/thumbnails --out ml/model
 python ml/scripts/quantization.py data/<export> --models ml/models --out results/<date>-quantization
 scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected; about twelve minutes
 
-python -m autodoom.deploy data/<export> --out ml/models/skip_model.json
-scripts/push-model.sh                                  # the app picks it up when a session starts
+python -m autodoom.deploy data/<export> --out ml/models/skip_model.json   # the model the phone fits, fitted here
 
 scripts/measure-battery.sh learning                    # phone off the charger, adb over Wi-Fi; once per setting
 python ml/scripts/battery.py data/battery --out results/<date>-battery

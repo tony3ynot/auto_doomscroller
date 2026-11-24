@@ -8,8 +8,8 @@ import androidx.room.RoomDatabase
 
 // Schema changes must ship with a migration: collected data is not recoverable.
 @Database(
-    entities = [SessionEntity::class, ReelEntity::class],
-    version = 11,
+    entities = [SessionEntity::class, ReelEntity::class, FrameEmbeddingEntity::class],
+    version = 12,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
@@ -21,6 +21,7 @@ import androidx.room.RoomDatabase
         AutoMigration(from = 8, to = 9),
         AutoMigration(from = 9, to = 10),
         AutoMigration(from = 10, to = 11),
+        AutoMigration(from = 11, to = 12),
     ],
 )
 abstract class AppDatabase : RoomDatabase() {

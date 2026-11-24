@@ -83,7 +83,7 @@ class ReelsAccessibilityService : AccessibilityService() {
         )
         scope.launch {
             SessionController.mode.collect { mode ->
-                if (mode == SessionMode.OFF) stopTracking() else AppGraph.skipPredictor.refreshModel(AppGraph.appScope)
+                if (mode == SessionMode.OFF) stopTracking()
             }
         }
         scope.launch { HandsFree.commands.collect(::onHandsFree) }
@@ -327,10 +327,10 @@ class ReelsAccessibilityService : AccessibilityService() {
             val prediction = AppGraph.skipPredictor.predictSkip(inputs) ?: return@launch
             val elapsedMs = tracker.currentElapsedMs
             if (tracker.currentSequence != sequence || elapsedMs == null) return@launch
-            tracker.setPrediction(sequence, prediction.skipProbability, elapsedMs)
+            tracker.setPrediction(sequence, prediction.embedding, prediction.skipProbability, elapsedMs)
             if (BuildConfig.DEBUG) {
-                Log.d(TAG, "P(skip)=${"%.2f".format(prediction.skipProbability)} @${reel.creator} " +
-                    "${elapsedMs}ms in, encoder ${prediction.encoderMs}ms")
+                Log.d(TAG, "P(skip)=${prediction.skipProbability?.let { "%.2f".format(it) } ?: "none yet"} " +
+                    "@${reel.creator} ${elapsedMs}ms in, encoder ${prediction.encoderMs}ms")
             }
             autoSkip(sequence, prediction)
         }
@@ -347,13 +347,14 @@ class ReelsAccessibilityService : AccessibilityService() {
         if (tracker.currentSequence != sequence || tracker.currentPaused || tracker.currentAutoSkipped) return
         if (reel.isAd || tracker.currentRevisit || tracker.currentUndone) return
         if (reel.liked == true || reel.commentsOpen) return
-        if (!autoPilot.wantsSkip(prediction.skipProbability, prediction.autoThreshold)) return
+        val skipProbability = prediction.skipProbability ?: return
+        if (!autoPilot.wantsSkip(skipProbability, prediction.autoThreshold)) return
         val waitMs = autoPilot.cooldownLeftMs()
         if (waitMs > 0) {
             frameHandler.postDelayed({ autoSkip(sequence, prediction) }, waitMs)
             return
         }
-        if (autoPilot.onPrediction(reel, prediction.skipProbability, prediction.autoThreshold)) {
+        if (autoPilot.onPrediction(reel, skipProbability, prediction.autoThreshold)) {
             tracker.markAutoSkipped()
             if (BuildConfig.DEBUG) Log.d(TAG, "auto-skipped @${reel.creator} ${tracker.currentElapsedMs}ms in")
         }
@@ -451,10 +452,12 @@ class ReelsAccessibilityService : AccessibilityService() {
         capturer.cancelPending()
     }
 
+    /** The session is over: stop, and let the model learn from what it added. */
     private fun stopTracking() {
         HandsFree.setFeedVisible(false)
         cancelFrames()
         tracker.stop()
+        AppGraph.skipPredictor.retrain(AppGraph.appScope)
     }
 
     /** Debug builds log each reel's node tree once, so adapters can be written against the real UI. */

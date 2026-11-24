@@ -27,7 +27,7 @@ object AppGraph {
         val app = context.applicationContext
         reelRepository = ReelRepository(AppDatabase.build(app).reelDao())
         thumbnailStore = ThumbnailStore.default(app)
-        skipPredictor = SkipPredictor(app, reelRepository).also { it.load(appScope) }
+        skipPredictor = SkipPredictor(app, reelRepository, thumbnailStore).also { it.load(appScope) }
         SessionController.init(app)
     }
 }
