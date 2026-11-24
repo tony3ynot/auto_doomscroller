@@ -322,3 +322,57 @@ What it changes
   reel six times over.
 - Not in these numbers: scaling the screenshot to 224 px and the head. The time from a reel
   appearing to a decision is measured in the app, once it runs the model.
+
+## 2026-11-25 · Five weeks, and the phone's own predictions
+
+Results: [results/2026-11-25-live-predictions](../results/2026-11-25-live-predictions/summary.md),
+[results/2026-11-25-learning-curve](../results/2026-11-25-learning-curve/summary.md),
+[results/2026-11-25-frame-head](../results/2026-11-25-frame-head/summary.md) · export 10-20 – 11-24
+(10922 reels, 5385 labeled first impressions), without 11-10, the evening spent testing gestures
+
+Since 11-19 the app scores every reel itself, with weights fitted offline on the reels up to
+11-09 (`autodoom.deploy`), and stores the probability with the reel. Six days of that: 1627
+reels scored, 1001 of them labeled.
+
+The phone against the offline code
+- The same weights give the same answer: the two probabilities differ by 0.003 at the median
+  and 0.022 at the 95th percentile, and 99% are within 0.05. The phone works from what it had
+  read about 0.15 s into the reel and from the frame before it was saved; the offline code
+  from the reel's final record and the JPEG. Which of the two the small gap comes from wasn't
+  looked into.
+- The probability is ready 150 ms into the reel at the median, 264 ms at the 95th percentile.
+  32 ms of that comes after the first frame is captured (preparing it, the encoder, the
+  model); the rest is the wait for the reel to settle on screen and the screenshot.
+
+The phone against the user
+- Skip AUC 0.704 (0.66–0.75) on days the model had never seen, against 0.657 for the same
+  kind of model over the five weeks. By day: 0.77, 0.74, 0.70, 0.71, 0.75, 0.54. These were
+  easy days as well as late ones: 38% of the labeled reels were skips, against 33% overall,
+  and inside a viewing session the ranking is 0.64.
+- At one threshold fixed in advance, P(skip) ≥ 0.8 would have skipped 86 reels, 92% of them
+  rightly, a fifth of all skips. At 0.5: 168 reels, 80%, a third of all skips.
+- Early on the same rule would have been a disaster. Scoring each day with a model fitted on
+  the days before it: in the first two weeks, reels given 0.8 or more were skipped 44% of the
+  time, and those given 0.9 or more 5%; in the last two weeks, 94% both (a one-off check, not
+  kept). A young model's confidence means nothing.
+
+How many days it takes
+- With the last week as the test period and only k days before it to learn from, history
+  included: 0.58 after one day, 0.70 after six, 0.71 after nine, and flat at 0.72 from three
+  weeks on. Coverage at 80% precision goes from 6% to 28% in the first week.
+- On that week the frame head gives nothing: with and without it the model is within 0.03 at
+  every k, either way round, and equal from three weeks on. Over all five weeks it still adds
+  +0.013 (+0.005 to +0.021) to context + creator (0.644), the same as at three weeks; CLIP
+  +0.009; a caption head +0.005 (−0.004 to +0.013).
+
+What it changes
+- The phone's arithmetic is right and fast enough. The offline code is no longer needed to
+  check it, only to analyse.
+- Auto mode is on. The weight file carries its own threshold: the lowest P(skip) at which at
+  least 90% of 30 or more reels were really skipped on the last 14 days, each scored by a
+  model that hadn't seen them. On this data that is 0.70 (91% of 149, a fifth of the skips).
+  Without such a point Auto mode stays locked, which is where a new user starts.
+- A new user needs about a week before the model is worth acting on, and two more for its
+  probabilities to be trusted. The threshold rule has to run on the phone, with the fitting.
+- What a reel shows still matters little. Five weeks in, almost all of the signal is who
+  posted it and how the session is going.

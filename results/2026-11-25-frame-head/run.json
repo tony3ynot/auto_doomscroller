@@ -1,0 +1,17 @@
+{
+  "script": "ml/scripts/frame_head.py",
+  "git_commit": "9e0f9ee",
+  "export": "20261124-231241",
+  "collection": [
+    "2026-10-20",
+    "2026-11-24"
+  ],
+  "reels": 10922,
+  "evaluated": 5385,
+  "k": 20,
+  "c": 1.0,
+  "until": null,
+  "without": [
+    "2026-11-10"
+  ]
+}

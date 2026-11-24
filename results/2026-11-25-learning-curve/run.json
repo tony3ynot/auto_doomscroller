@@ -1,0 +1,21 @@
+{
+  "script": "ml/scripts/learning_curve.py",
+  "git_commit": "9e0f9ee",
+  "export": "20261124-231241",
+  "collection": [
+    "2026-10-20",
+    "2026-11-24"
+  ],
+  "reels": 10922,
+  "test_days": 7,
+  "test_period": [
+    "2026-11-18",
+    "2026-11-24"
+  ],
+  "c": 1.0,
+  "components": 8,
+  "until": null,
+  "without": [
+    "2026-11-10"
+  ]
+}

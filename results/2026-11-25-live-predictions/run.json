@@ -1,0 +1,18 @@
+{
+  "script": "ml/scripts/live_predictions.py",
+  "git_commit": "9e0f9ee",
+  "export": "20261124-231241",
+  "model_trained": {
+    "commit": "cdd9dd4-dirty",
+    "encoder": "mobilenet_v3_small",
+    "reels": 3365,
+    "skip_share": 0.32689450222882616,
+    "first_day": "2026-10-20",
+    "last_day": "2026-11-09"
+  },
+  "scored": 1627,
+  "until": null,
+  "without": [
+    "2026-11-10"
+  ]
+}
