@@ -34,7 +34,7 @@ class SkipPredictor(private val context: Context, private val repository: ReelRe
     /** What one prediction needs, read on the main thread while the frame is still valid. */
     class Inputs internal constructor(internal val features: FloatArray, internal val frame: ByteBuffer)
 
-    class Prediction(val skipProbability: Float, val encoderMs: Long)
+    class Prediction(val skipProbability: Float, val encoderMs: Long, val autoThreshold: Float?)
 
     // The encoder and the model are only touched on this one worker.
     private val inference = Dispatchers.Default.limitedParallelism(1)
@@ -53,6 +53,11 @@ class SkipPredictor(private val context: Context, private val repository: ReelRe
 
     /** What the loaded model was trained on, for the home screen. */
     val trainedOn: StateFlow<SkipModel.TrainingSummary?> = _trainedOn.asStateFlow()
+
+    private val _autoThreshold = MutableStateFlow<Float?>(null)
+
+    /** P(skip) from which Auto mode acts with the loaded model; null keeps Auto mode locked. */
+    val autoThreshold: StateFlow<Float?> = _autoThreshold.asStateFlow()
 
     /** Loads the encoder, the weights and the history of everything watched so far. */
     fun load(scope: CoroutineScope) {
@@ -89,7 +94,8 @@ class SkipPredictor(private val context: Context, private val repository: ReelRe
             ?.takeIf { usable(it) }
         ready = model != null
         _trainedOn.value = model?.trainedOn
-        Log.i(TAG, model?.trainedOn?.let { "skip model: ${it.reels} reels up to ${it.lastDay}" } ?: "no skip model")
+        _autoThreshold.value = model?.autoThreshold
+        Log.i(TAG, model?.let { "skip model: ${it.trainedOn?.reels} reels up to ${it.trainedOn?.lastDay}, auto from ${it.autoThreshold}" } ?: "no skip model")
     }
 
     private fun usable(model: SkipModel): Boolean {
@@ -112,7 +118,7 @@ class SkipPredictor(private val context: Context, private val repository: ReelRe
         val started = SystemClock.elapsedRealtimeNanos()
         val embedding = encoder.encode(inputs.frame)
         val encoderMs = (SystemClock.elapsedRealtimeNanos() - started) / 1_000_000
-        Prediction(model.predictSkip(inputs.features, embedding), encoderMs)
+        Prediction(model.predictSkip(inputs.features, embedding), encoderMs, model.autoThreshold)
     }
 
     /** Every reel the tracker stores goes into the history the next prediction uses. */

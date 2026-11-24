@@ -67,6 +67,7 @@ fun HomeScreen() {
         if (granted[Manifest.permission.CAMERA] == true) startHandsFree(context)
     }
     val trainedOn by AppGraph.skipPredictor.trainedOn.collectAsStateWithLifecycle()
+    val autoThreshold by AppGraph.skipPredictor.autoThreshold.collectAsStateWithLifecycle()
     val labeledCounts by AppGraph.reelRepository.observeLabeledCounts()
         .collectAsStateWithLifecycle(initialValue = emptyMap())
 
@@ -98,11 +99,18 @@ fun HomeScreen() {
                     Text("Mode", style = MaterialTheme.typography.titleMedium)
                     ModeOption("Off", SessionMode.OFF, mode, enabled = true)
                     ModeOption("Learning: watch normally, it learns", SessionMode.LEARNING, mode, serviceEnabled)
-                    // TODO: enable once the skip model meets the validation precision target.
-                    ModeOption("Auto: skips what you would skip", SessionMode.AUTO, mode, enabled = false)
+                    // Auto unlocks when the model has shown on its recent days that it is right often enough.
+                    ModeOption("Auto: skips what you would skip", SessionMode.AUTO, mode, serviceEnabled && autoThreshold != null)
                     Text(
-                        trainedOn?.let { "Skip model: trained on ${it.reels} reels up to ${it.lastDay}. It predicts, and records its predictions." }
-                            ?: "No skip model yet, so no predictions.",
+                        when {
+                            trainedOn == null -> "No skip model yet, so no predictions."
+                            autoThreshold == null ->
+                                "Skip model: trained on ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
+                                    "Not sure enough yet for Auto mode; it predicts and records its predictions."
+                            else ->
+                                "Skip model: trained on ${trainedOn?.reels} reels up to ${trainedOn?.lastDay}. " +
+                                    "Auto mode skips a reel when P(skip) is ${"%.2f".format(autoThreshold)} or more."
+                        },
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {

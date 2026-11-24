@@ -21,6 +21,7 @@ import com.autodoomscroller.adapter.YouTubeShortsAdapter
 import com.autodoomscroller.autopilot.AutoPilot
 import com.autodoomscroller.handsfree.HandsFree
 import com.autodoomscroller.handsfree.HandsFreeCommand
+import com.autodoomscroller.model.SkipPredictor
 import com.autodoomscroller.session.SessionController
 import com.autodoomscroller.session.SessionMode
 import com.autodoomscroller.tracking.Fingerprint
@@ -331,9 +332,30 @@ class ReelsAccessibilityService : AccessibilityService() {
                 Log.d(TAG, "P(skip)=${"%.2f".format(prediction.skipProbability)} @${reel.creator} " +
                     "${elapsedMs}ms in, encoder ${prediction.encoderMs}ms")
             }
-            val current = tracker.currentSnapshot ?: return@launch
-            if (current.isAd || tracker.currentRevisit || tracker.currentUndone) return@launch
-            if (autoPilot.onPrediction(current, prediction.skipProbability)) tracker.markAutoSkipped()
+            autoSkip(sequence, prediction)
+        }
+    }
+
+    /**
+     * Auto mode's move on a prediction. Right after another swipe it waits out the cooldown and
+     * then skips if the reel is still there, so a run of reels the model is sure about is taken
+     * one by one instead of leaving every second one to the user. A reel the user has already
+     * reacted to, or came back to, is left alone.
+     */
+    private fun autoSkip(sequence: Int, prediction: SkipPredictor.Prediction) {
+        val reel = tracker.currentSnapshot ?: return
+        if (tracker.currentSequence != sequence || tracker.currentPaused || tracker.currentAutoSkipped) return
+        if (reel.isAd || tracker.currentRevisit || tracker.currentUndone) return
+        if (reel.liked == true || reel.commentsOpen) return
+        if (!autoPilot.wantsSkip(prediction.skipProbability, prediction.autoThreshold)) return
+        val waitMs = autoPilot.cooldownLeftMs()
+        if (waitMs > 0) {
+            frameHandler.postDelayed({ autoSkip(sequence, prediction) }, waitMs)
+            return
+        }
+        if (autoPilot.onPrediction(reel, prediction.skipProbability, prediction.autoThreshold)) {
+            tracker.markAutoSkipped()
+            if (BuildConfig.DEBUG) Log.d(TAG, "auto-skipped @${reel.creator} ${tracker.currentElapsedMs}ms in")
         }
     }
 

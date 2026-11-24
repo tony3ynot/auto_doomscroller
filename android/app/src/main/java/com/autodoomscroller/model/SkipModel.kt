@@ -17,6 +17,11 @@ class SkipModel(
     private val bias: Float,
     /** What the file says about its training data, for display. */
     val trainedOn: TrainingSummary? = null,
+    /**
+     * P(skip) from which Auto mode may act; null while the model hasn't shown on recent days
+     * that it is right often enough at any threshold.
+     */
+    val autoThreshold: Float? = null,
 ) {
     class TrainingSummary(val reels: Int, val lastDay: String)
 
@@ -47,6 +52,7 @@ class SkipModel(
                 frameWeights = file.getJSONArray("frame_weights").toFloats(),
                 bias = file.getDouble("bias").toFloat(),
                 trainedOn = file.optJSONObject("trained")?.let { TrainingSummary(it.getInt("reels"), it.getString("last_day")) },
+                autoThreshold = file.optDouble("auto_threshold").takeUnless { it.isNaN() }?.toFloat(),
             )
             require(model.impute.size == model.features.size && model.weights.size == model.features.size) {
                 "weight file lists ${model.features.size} features but not as many weights"

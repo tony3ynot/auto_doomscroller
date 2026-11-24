@@ -66,7 +66,7 @@ def model_fixture() -> dict:
     rng = np.random.default_rng(1)
     weights = {"format": FORMAT, "features": ["a", "b", "c"], "impute": [0.5, -1.0, 2.0],
                "weights": rng.normal(size=3).round(4).tolist(), "frame_weights": rng.normal(size=6).round(4).tolist(),
-               "bias": -0.3}
+               "bias": -0.3, "auto_threshold": 0.7}
     x = rng.normal(size=(5, 3)).round(4)
     x[1, 0] = x[3, 2] = x[4, 1] = np.nan
     frame = rng.normal(size=(5, 6))

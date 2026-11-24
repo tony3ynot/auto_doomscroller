@@ -4,6 +4,7 @@ import java.io.File
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -20,6 +21,14 @@ class SkipModelTest {
             val p = model.predictSkip(floats(case.getJSONArray("x")), floats(case.getJSONArray("frame")))
             assertEquals("case $i", case.getDouble("p_skip"), p.toDouble(), 1e-5)
         }
+    }
+
+    @Test
+    fun autoThresholdIsReadAndMayBeMissing() {
+        val file = fixture.getJSONObject("model")
+        assertEquals(0.7f, SkipModel.parse(file.toString()).autoThreshold)
+        assertNull(SkipModel.parse(JSONObject(file.toString()).put("auto_threshold", JSONObject.NULL).toString()).autoThreshold)
+        assertNull(SkipModel.parse(JSONObject(file.toString()).apply { remove("auto_threshold") }.toString()).autoThreshold)
     }
 
     @Test
