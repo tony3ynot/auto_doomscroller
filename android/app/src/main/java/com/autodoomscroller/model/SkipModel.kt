@@ -25,6 +25,21 @@ class SkipModel(
 ) {
     class TrainingSummary(val reels: Int, val lastDay: String)
 
+    fun copy(trainedOn: TrainingSummary?, autoThreshold: Float?) =
+        SkipModel(features, impute, weights, frameWeights, bias, trainedOn, autoThreshold)
+
+    /** The weight file, as [parse] reads it. */
+    fun toJson(): String = JSONObject()
+        .put("format", FORMAT)
+        .put("features", JSONArray(features))
+        .put("impute", impute.toJson())
+        .put("weights", weights.toJson())
+        .put("frame_weights", frameWeights.toJson())
+        .put("bias", bias.toDouble())
+        .put("auto_threshold", autoThreshold?.toDouble() ?: JSONObject.NULL)
+        .put("trained", trainedOn?.let { JSONObject().put("reels", it.reels).put("last_day", it.lastDay) } ?: JSONObject.NULL)
+        .toString()
+
     val frameSize: Int
         get() = frameWeights.size
 
@@ -61,5 +76,7 @@ class SkipModel(
         }
 
         private fun JSONArray.toFloats() = FloatArray(length()) { getDouble(it).toFloat() }
+
+        private fun FloatArray.toJson() = JSONArray().also { array -> forEach { array.put(it.toDouble()) } }
     }
 }

@@ -3,9 +3,11 @@
     python ml/tests/make_fixtures.py
 
 ``decision_features.json``: made-up reels in time order and the features ``decision_features``
-gives each. ``skip_model.json``: a small weight file, inputs and the P(skip) it gives. The
-Kotlin tests (ViewingHistoryTest, SkipModelTest) read the same files, so the two sides can't
-drift apart unnoticed. Re-run after changing the features or the weight format on purpose.
+gives each. ``skip_model.json``: a small weight file, inputs and the P(skip) it gives.
+``training.json``: labeled examples over several days, what the fitted model then gives for
+some new reels, and the Auto mode threshold. The Kotlin tests (ViewingHistoryTest,
+SkipModelTest, SkipTrainerTest) read the same files, so the two sides can't drift apart
+unnoticed. Re-run after changing the features, the model or the weight format on purpose.
 """
 
 from __future__ import annotations
@@ -16,8 +18,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from autodoom.deploy import FORMAT, predict
+from autodoom.deploy import FORMAT, auto_threshold, predict
+from autodoom.experiment import fold_scores, with_embedding
 from autodoom.features import YOUTUBE, decision_features
+from autodoom.model import skip_model
 
 FIXTURES = Path(__file__).parent / "fixtures"
 INSTAGRAM = "com.instagram.android"
@@ -76,7 +80,50 @@ def model_fixture() -> dict:
                       for xi, fi, p in zip(x, frame, predict(weights, x, frame))]}
 
 
-FILES = {"decision_features.json": decision_fixture, "skip_model.json": model_fixture}
+def training_fixture(days: int = 8, per_day: int = 40, dim: int = 10, components: int = 3) -> dict:
+    """Examples whose label follows two features and the frame's strongest direction."""
+    rng = np.random.default_rng(2)
+    names = ["a", "b", "c"]
+
+    def draw(n: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        x = rng.normal(size=(n, 3))
+        factors = rng.normal(size=(n, 3)) * [3.0, 2.0, 1.2]
+        frame = factors @ mixing + 0.2 * rng.normal(size=(n, dim)) + offset
+        frame /= np.linalg.norm(frame, axis=1, keepdims=True)
+        logit = 1.2 * x[:, 0] - 0.8 * x[:, 1] + 0.9 * factors[:, 0] - 0.4
+        y = logit + rng.logistic(size=n) > 0
+        x[rng.random(size=x.shape) < 0.08] = np.nan
+        return x.round(4), frame.round(6), y
+
+    mixing, offset = rng.normal(size=(3, dim)), rng.normal(size=dim)
+    n = days * per_day
+    x, frame, y = draw(n)
+    day = np.repeat(np.arange(days), per_day)
+    data = pd.DataFrame(x, columns=names)
+    # Noon in Seoul on consecutive days, so the folds are the days.
+    data["started_at_ms"] = START_MS + 13 * 3_600_000 + day * 86_400_000 + np.tile(np.arange(per_day), days) * 1000
+    data["label"] = np.where(y, "SKIP", "WATCH")
+    data["session"] = day
+    data, columns = with_embedding(data, "frame", frame)
+
+    model = skip_model(1.0, columns, components).fit(data[[*names, *columns]], y)
+    new_x, new_frame, _ = draw(12)
+    probe = pd.DataFrame(np.hstack([new_x, new_frame]), columns=[*names, *columns])
+    scores = fold_scores(data, names, True, 1.0, columns, components)
+    auto = auto_threshold(scores, days=4, precision=0.8, min_skips=20)
+    none = lambda row: [None if np.isnan(v) else float(v) for v in row]
+    return {
+        "features": names, "components": components, "c": 1.0,
+        "examples": [{"x": none(xi), "frame": fi.tolist(), "skipped": bool(yi), "day": int(di)}
+                     for xi, fi, yi, di in zip(x, frame, y, day)],
+        "probes": [{"x": none(xi), "frame": fi.tolist(), "p_skip": float(p)}
+                   for xi, fi, p in zip(new_x, new_frame, model.predict_proba(probe)[:, 1])],
+        "rolling": {"test_days": int(scores["fold"].nunique()), "p_skip_last_day": scores[scores["fold"] == scores["fold"].max()]["p"].round(6).tolist()},
+        "auto": {"days": 4, "precision": 0.8, "min_skips": 20, "expected": auto},
+    }
+
+
+FILES = {"decision_features.json": decision_fixture, "skip_model.json": model_fixture, "training.json": training_fixture}
 
 if __name__ == "__main__":
     FIXTURES.mkdir(exist_ok=True)
