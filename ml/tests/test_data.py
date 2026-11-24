@@ -29,3 +29,19 @@ def test_until_keeps_reels_up_to_the_end_of_that_day_in_seoul(tmp_path):
     assert reels["id"].tolist() == [0]
     _, everything = load_export(tmp_path)
     assert len(everything) == 2
+
+
+def test_load_export_can_leave_days_out(tmp_path):
+    import json
+    from datetime import date
+
+    from autodoom.data import load_export
+
+    day = 86_400_000
+    start = 1_793_800_000_000  # 2026-11-04 in Seoul
+    reels = [{"id": i, "started_at_ms": start + i * day, "ended_at_ms": start + i * day + 1000} for i in range(4)]
+    (tmp_path / "reels.jsonl").write_text("\n".join(json.dumps(r) for r in reels))
+    (tmp_path / "sessions.jsonl").write_text("")
+    _, kept = load_export(tmp_path, until=date(2026, 11, 6), without=[date(2026, 11, 5)])
+    assert kept["id"].tolist() == [0, 2]
+    assert load_export(tmp_path)[1]["id"].tolist() == [0, 1, 2, 3]

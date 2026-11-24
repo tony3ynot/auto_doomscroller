@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
 
@@ -16,18 +17,20 @@ def local_day(ms: pd.Series) -> pd.Series:
     return pd.to_datetime(ms, unit="ms", utc=True).dt.tz_convert(TIMEZONE).dt.date
 
 
-def load_export(export_dir: str | Path, until: date | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
+def load_export(export_dir: str | Path, until: date | None = None,
+                without: Iterable[date] = ()) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Return ``(sessions, reels)``. ``reels`` gets an extra ``dwell_ms`` column (time on screen,
     excluding time away from the feed mid-reel). ``until`` keeps only reels from that day or
-    earlier, e.g. to leave out a day spent testing the app."""
+    earlier, and ``without`` drops whole days, e.g. ones spent testing the app."""
     export_dir = Path(export_dir)
     sessions = pd.read_json(export_dir / "sessions.jsonl", lines=True)
     reels = pd.read_json(export_dir / "reels.jsonl", lines=True)
     if not reels.empty:
         paused = reels["paused_ms"].fillna(0) if "paused_ms" in reels else 0
         reels["dwell_ms"] = reels["ended_at_ms"] - reels["started_at_ms"] - paused
-        if until is not None:
-            reels = reels[local_day(reels["started_at_ms"]) <= until].reset_index(drop=True)
+        day = local_day(reels["started_at_ms"])
+        keep = ~day.isin(list(without)) & ((day <= until) if until is not None else True)
+        reels = reels[keep].reset_index(drop=True)
     return sessions, reels
 
 

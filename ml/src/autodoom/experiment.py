@@ -3,6 +3,7 @@ how results are tabulated and drawn. The scripts in ``ml/scripts`` pick the feat
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
 
@@ -27,10 +28,12 @@ CONTEXT = [
 CREATOR = ["log_creator_seen", "creator_skip_rate"]
 
 
-def build(export: Path, k: int, similarity: dict[str, str], until: date | None = None) -> pd.DataFrame:
-    """All reels in time order (up to ``until``) with their label, decision-time features, and
-    for each ``similarity`` entry (feature name -> embedding model) the kNN skip share."""
-    _, reels = load_export(export, until)
+def build(export: Path, k: int, similarity: dict[str, str], until: date | None = None,
+          without: Iterable[date] = ()) -> pd.DataFrame:
+    """All reels in time order (up to ``until``, leaving out the days in ``without``) with their
+    label, decision-time features, and for each ``similarity`` entry (feature name -> embedding
+    model) the kNN skip share."""
+    _, reels = load_export(export, until, without)
     reels = clean(reels).sort_values("started_at_ms").reset_index(drop=True)
     reels["label"] = relabel(reels)
     features = decision_features(reels)

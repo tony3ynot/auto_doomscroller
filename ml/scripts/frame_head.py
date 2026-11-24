@@ -49,9 +49,11 @@ def main() -> None:
     parser.add_argument("--k", type=int, default=20, help="neighbours for the similarity scores")
     parser.add_argument("--c", type=float, default=1.0, help="inverse L2 strength of the logistic regression")
     parser.add_argument("--until", type=date.fromisoformat, help="last day to use (YYYY-MM-DD), e.g. before a test day")
+    parser.add_argument("--without", type=date.fromisoformat, nargs="+", default=[],
+                        help="days to leave out altogether (YYYY-MM-DD), e.g. ones spent testing the app")
     args = parser.parse_args()
 
-    data = build(args.export, args.k, SIMILARITY, args.until)
+    data = build(args.export, args.k, SIMILARITY, args.until, args.without)
     columns = {}
     for model in sorted({m for _, m, _ in SETS.values() if m}):
         # A reel without a caption gets the zero vector; has_caption is already in the context.
@@ -73,7 +75,7 @@ def main() -> None:
     auc_figure(results, args.out / "auc_frame_head", DEPLOYABLE)
     run = write_run(
         args.out, "ml/scripts/frame_head.py", args.export, collection=[data["day"].min(), data["day"].max()],
-        reels=len(data), evaluated=len(eval_set), k=args.k, c=args.c, until=args.until,
+        reels=len(data), evaluated=len(eval_set), k=args.k, c=args.c, until=args.until, without=args.without,
     )
 
     lines = [

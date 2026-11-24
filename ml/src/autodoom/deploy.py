@@ -66,9 +66,11 @@ def main() -> None:
     parser.add_argument("--c", type=float, default=1.0, help="inverse L2 strength of the logistic regression")
     parser.add_argument("--components", type=int, default=8, help="principal components of the frame embedding")
     parser.add_argument("--until", type=date.fromisoformat, help="last day to train on (YYYY-MM-DD)")
+    parser.add_argument("--without", type=date.fromisoformat, nargs="+", default=[],
+                        help="days to leave out altogether (YYYY-MM-DD), e.g. ones spent testing the app")
     args = parser.parse_args()
 
-    data = build(args.export, 1, {}, args.until)
+    data = build(args.export, 1, {}, args.until, args.without)
     data, columns = with_embedding(data, "frame", embeddings(args.export, data, ENCODER).to_numpy())
     train = data[data["label"].notna() & ~data["revisit"] & data["has_frame"]]
     features = CONTEXT + CREATOR
