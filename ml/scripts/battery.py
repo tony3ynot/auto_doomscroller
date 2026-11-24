@@ -1,5 +1,6 @@
 """What a session costs in battery, by how the app was set.
 
+    scripts/measure-battery.sh <name>            # once per setting, phone off the charger
     python ml/scripts/battery.py data/battery --out results/<date>-battery
 
 Each run is one stretch on battery with reels swiped at a fixed pace, read from the phone's
@@ -38,7 +39,7 @@ def setting(conditions: dict) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("runs", type=Path, help="folder with the runs' statistics and conditions")
+    parser.add_argument("runs", type=Path, help="folder written by scripts/measure-battery.sh")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--only", nargs="+", help="names of the runs to report, in this order (default: all, by start time)")
     args = parser.parse_args()

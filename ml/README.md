@@ -52,7 +52,7 @@ Scripts in `scripts/` write a result folder under `results/` at the repo root
 | `learning_curve.py` | Skip AUC against the days of use the model has had |
 | `quantization.py` | Size, embedding fidelity and skip AUC of each encoder variant |
 | `encoder_latency.py` | Latency of each encoder variant on a phone, from `scripts/benchmark-encoder.sh` |
-| `battery.py` | Battery cost of a session by app setting, from the phone's battery statistics |
+| `battery.py` | Battery cost of a session by app setting, from runs taken with `scripts/measure-battery.sh` |
 
 From the repo root, with exports in `data/`:
 
@@ -74,6 +74,7 @@ scripts/benchmark-encoder.sh results/<date>-encoder-latency   # phone connected;
 python -m autodoom.deploy data/<export> --out ml/models/skip_model.json
 scripts/push-model.sh                                  # the app picks it up when a session starts
 
+scripts/measure-battery.sh learning                    # phone off the charger, adb over Wi-Fi; once per setting
 python ml/scripts/battery.py data/battery --out results/<date>-battery
 ```
 
