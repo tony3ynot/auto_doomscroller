@@ -99,7 +99,12 @@ skip AUCs are within noise of each other. FP16 is the one the app uses: half the
 with the same embeddings and the same speed. The reasoning is in the
 [experiment log](docs/experiments.md).
 
-Decision latency in the app and battery drain over a session are still to be measured.
+In use the answer is ready about 150 ms after a reel appears (95th percentile 264 ms); 32 ms
+of that goes to preparing the frame, the encoder and the model. Ten minutes of Shorts at a
+fixed pace drew 1.6–2.0 W with the app off and 1.8 W in Learning mode, so the app's cost is
+within what two runs of the same setting differ by; it uses 6.6 s of processor time a minute.
+Hands-free mode is another matter: 5.0 W with the camera and two models running, which
+needs work before it can stay on for a session.
 
 ## Repository layout
 
@@ -176,7 +181,7 @@ See [ml/README.md](ml/README.md) for the analysis loop and the quantization scri
 - [x] Hands-free mode: camera gestures to skip and like
 - [ ] On-device inference and live prediction overlay
 - [ ] Auto mode with corrections
-- [ ] Encoder quantization and on-device benchmarks
+- [x] Encoder quantization and on-device benchmarks
 - [ ] Taste map, session report card
 - [ ] UI languages other than Korean: reel tracking uses view IDs, but a few signals (YouTube
       like / save state and playback time, some ad labels) are read from Korean UI text
