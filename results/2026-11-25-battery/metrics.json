@@ -1,0 +1,216 @@
+{
+  "off": {
+    "setting": "Off",
+    "brightness": "115",
+    "brightness_auto": false,
+    "minutes": 10.390033333337245,
+    "discharge_mah": 66.0,
+    "mean_current_ma": 381.13448465021054,
+    "mean_power_mw": 1595.0571515629913,
+    "sampled_current_ma": 364.40782673137056,
+    "level_drop": 2,
+    "battery_temp_c": {
+      "start": 31.2,
+      "end": 29.2,
+      "max": 31.2
+    },
+    "skin_temp_c": {
+      "start": 34.0,
+      "end": 31.1,
+      "max": 34.0
+    },
+    "percent_per_hour": 9.772679093595142,
+    "system_discharge_mah": null,
+    "minutes_screen_off": 0.0,
+    "apps": {
+      "app": {
+        "estimated_mah": 0.0307,
+        "estimated_mah_by": {
+          "cpu": 0.0307
+        },
+        "cpu_seconds": 1.706,
+        "cpu_seconds_per_minute": 0.16419581586193413,
+        "estimated_ma": 0.17728528301153734
+      },
+      "instagram": {
+        "estimated_mah": 0.0171,
+        "estimated_mah_by": {
+          "cpu": 0.0158,
+          "wifi": 0.00132
+        },
+        "cpu_seconds": 0.358,
+        "cpu_seconds_per_minute": 0.03445609734969075,
+        "estimated_ma": 0.09874848011391818
+      },
+      "youtube": {
+        "estimated_mah": 60.9,
+        "estimated_mah_by": {
+          "screen": 39.0,
+          "cpu": 11.4,
+          "audio": 4.0,
+          "video": 4.34,
+          "wifi": 2.2
+        },
+        "cpu_seconds": 533.848,
+        "cpu_seconds_per_minute": 51.38077837412767,
+        "estimated_ma": 351.68318356360334
+      }
+    }
+  },
+  "learning": {
+    "setting": "Learning",
+    "brightness": "115",
+    "brightness_auto": false,
+    "minutes": 10.345083333334575,
+    "discharge_mah": 73.0,
+    "mean_current_ma": 423.38953286983104,
+    "mean_power_mw": 1767.099458518925,
+    "sampled_current_ma": 383.3617966666982,
+    "level_drop": 2,
+    "battery_temp_c": {
+      "start": 29.2,
+      "end": 29.2,
+      "max": 29.2
+    },
+    "skin_temp_c": {
+      "start": 30.9,
+      "end": 31.2,
+      "max": 31.4
+    },
+    "percent_per_hour": 10.856141868457206,
+    "system_discharge_mah": null,
+    "minutes_screen_off": 0.0,
+    "apps": {
+      "app": {
+        "estimated_mah": 1.5,
+        "estimated_mah_by": {
+          "cpu": 1.5
+        },
+        "cpu_seconds": 68.49799999999999,
+        "cpu_seconds_per_minute": 6.6213096398442195,
+        "estimated_ma": 8.699784921982829
+      },
+      "instagram": {
+        "estimated_mah": 0.00904,
+        "estimated_mah_by": {
+          "cpu": 0.00795,
+          "wifi": 0.00109
+        },
+        "cpu_seconds": 0.382,
+        "cpu_seconds_per_minute": 0.036925753779971565,
+        "estimated_ma": 0.05243070379648318
+      },
+      "youtube": {
+        "estimated_mah": 61.0,
+        "estimated_mah_by": {
+          "screen": 39.1,
+          "cpu": 11.4,
+          "audio": 4.01,
+          "video": 4.36,
+          "wifi": 2.24
+        },
+        "cpu_seconds": 525.222,
+        "cpu_seconds_per_minute": 50.77020484770739,
+        "estimated_ma": 353.7912534939684
+      }
+    }
+  },
+  "handsfree": {
+    "setting": "Learning + hands-free",
+    "brightness": "115",
+    "brightness_auto": false,
+    "minutes": 10.410416666666666,
+    "discharge_mah": 214.0,
+    "mean_current_ma": 1233.38002801681,
+    "mean_power_mw": 5009.965332998805,
+    "sampled_current_ma": 1127.758226135582,
+    "level_drop": 6,
+    "battery_temp_c": {
+      "start": 29.2,
+      "end": 38.5,
+      "max": 38.5
+    },
+    "skin_temp_c": {
+      "start": 31.7,
+      "end": 41.7,
+      "max": 41.9
+    },
+    "percent_per_hour": 31.62512892350795,
+    "system_discharge_mah": 214,
+    "minutes_screen_off": 0.0,
+    "apps": {
+      "app": {
+        "estimated_mah": 29.3,
+        "estimated_mah_by": {
+          "cpu": 29.3
+        },
+        "cpu_seconds": 721.73,
+        "cpu_seconds_per_minute": 69.32767660596357,
+        "estimated_ma": 168.86932159295577
+      },
+      "instagram": {},
+      "youtube": {
+        "estimated_mah": 61.8,
+        "estimated_mah_by": {
+          "screen": 38.9,
+          "cpu": 12.2,
+          "audio": 3.99,
+          "video": 4.34,
+          "wifi": 2.37
+        },
+        "cpu_seconds": 342.714,
+        "cpu_seconds_per_minute": 32.920296177706625,
+        "estimated_ma": 356.1817090254152
+      }
+    }
+  },
+  "off2": {
+    "setting": "Off",
+    "brightness": "115",
+    "brightness_auto": false,
+    "minutes": 10.37361666666499,
+    "discharge_mah": 85.0,
+    "mean_current_ma": 491.6318159691163,
+    "mean_power_mw": 1996.173397674317,
+    "sampled_current_ma": 414.9709824766114,
+    "level_drop": 2,
+    "battery_temp_c": {
+      "start": 38.5,
+      "end": 32.5,
+      "max": 38.5
+    },
+    "skin_temp_c": {
+      "start": 41.1,
+      "end": 33.5,
+      "max": 41.1
+    },
+    "percent_per_hour": 12.60594399920811,
+    "system_discharge_mah": null,
+    "minutes_screen_off": 0.0,
+    "apps": {
+      "app": {
+        "estimated_mah": 0.0267,
+        "estimated_mah_by": {
+          "cpu": 0.0267
+        },
+        "cpu_seconds": 1.445,
+        "cpu_seconds_per_minute": 0.13929568119124963,
+        "estimated_ma": 0.15443022925147537
+      },
+      "instagram": {},
+      "youtube": {
+        "estimated_mah": 60.5,
+        "estimated_mah_by": {
+          "screen": 39.0,
+          "cpu": 10.6,
+          "audio": 4.0,
+          "video": 4.35,
+          "wifi": 2.54
+        },
+        "cpu_seconds": 494.836,
+        "cpu_seconds_per_minute": 47.70139633076346,
+        "estimated_ma": 349.9261748956651
+      }
+    }
+  }
+}

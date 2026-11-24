@@ -376,3 +376,41 @@ What it changes
   probabilities to be trusted. The threshold rule has to run on the phone, with the fitting.
 - What a reel shows still matters little. Five weeks in, almost all of the signal is who
   posted it and how the session is going.
+
+## 2026-11-25 · Battery cost
+
+Result: [results/2026-11-25-battery](../results/2026-11-25-battery/summary.md) · script:
+`ml/scripts/battery.py`, on runs taken the way `scripts/measure-battery.sh` takes them ·
+Galaxy S24, Android 17
+
+Four runs of ten minutes on battery, one after another: YouTube Shorts with a swipe to the
+next one every 4 s (sent by script over Wi-Fi adb, so every run has the same pace), sound off,
+brightness fixed, research mode and ad skip off. Read from `dumpsys batterystats`, reset at
+the start of each run.
+
+| Run | Discharge | Mean power | Battery per hour | App CPU | Skin temperature |
+|---|---|---|---|---|---|
+| App off | 66 mAh | 1.60 W | 9.8% | 0.2 s/min | 34.0 → 31.1 °C |
+| Learning | 73 mAh | 1.77 W | 10.9% | 6.6 s/min | 30.9 → 31.2 °C |
+| Learning + hands-free | 214 mAh | 5.01 W | 31.6% | 69.3 s/min | 31.7 → 41.7 °C |
+| App off, again | 85 mAh | 2.00 W | 12.6% | 0.1 s/min | 41.1 → 33.5 °C |
+
+- Learning costs little. It drew 0.17 W more than the first run with the app off, and the two
+  runs with the app off differ by 0.40 W, so the difference is inside what two runs of the
+  same setting give. The firm number is processor time: 6.6 s per minute, a ninth of one
+  core, for reading the screen, the screenshots and the encoder.
+- Hands-free costs three times the whole phone: 5.0 W, more than one core busy all the time
+  (69 s of processor time per minute), and the skin temperature up by 10 °C in ten minutes.
+  The face was in view throughout, so both models ran on every frame.
+- The second run with the app off started at 41 °C, straight after hands-free, and is not a
+  clean baseline; it shows how much the order of runs matters.
+- The system's own estimate of the app's share (8.7 mA in Learning, 169 mA with hands-free)
+  counts its processor time only. The feed app's estimate is the same 350–356 mA in all
+  four runs, which says the pace was.
+- Auto mode was not measured. It does what Learning does and adds a swipe.
+
+What it changes
+- Learning and Auto can stay on for a session without the user noticing in the battery.
+- Hands-free can't, as it is. It has to analyse fewer frames, or run one model and wake the
+  other only when needed, before it is more than a demonstration.
+- Still owed: the runs in another order with the phone cooled in between, and Instagram.

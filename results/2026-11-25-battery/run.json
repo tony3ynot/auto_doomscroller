@@ -1,0 +1,14 @@
+{
+  "script": "ml/scripts/battery.py",
+  "git_commit": "9e0f9ee",
+  "device": {
+    "model": "SM-S921N",
+    "android": "17"
+  },
+  "runs": {
+    "off": "2026-11-24T23:18:08+0900",
+    "learning": "2026-11-24T23:29:21+0900",
+    "handsfree": "2026-11-24T23:42:28+0900",
+    "off2": "2026-11-24T23:53:43+0900"
+  }
+}
