@@ -414,3 +414,32 @@ What it changes
 - Hands-free can't, as it is. It has to analyse fewer frames, or run one model and wake the
   other only when needed, before it is more than a demonstration.
 - Still owed: the runs in another order with the phone cooled in between, and Instagram.
+
+## 2026-11-25 · Fitting on the phone
+
+Commit `61f92b3`. Tested on the Galaxy S24 with the debug logs.
+
+Until now the weights were fitted offline and pushed to the phone. The phone now fits them
+itself when a session ends: the same model, written again in Kotlin, with the same rule for
+the Auto mode threshold.
+
+- Against scikit-learn on the same made-up examples, the Kotlin fit gives probabilities within
+  0.0002 and the same threshold (`ml/tests/fixtures/training.json`, read by both test suites).
+- First start after the update: the stored first frames of 5507 labeled reels were embedded in
+  62 s, 11 ms each, in the background.
+- Fitting on those 5507 reels took 9.5 s, the fourteen fits behind the Auto threshold
+  included. The refit after the next session, with 8 more labeled reels, took 7.8 s.
+- The threshold came out at 0.70, as in the offline fit on the same weeks. (The phone had 5507
+  reels to the offline 5385: it keeps 11-10 and uses the labels it gave at the time.)
+- The embeddings took the database from 2.9 MB to 25 MB.
+- With the phone's own model, 13 reels were scored as before (0.33–0.65). None reached 0.70,
+  so an Auto skip on a phone-fitted model is still to be seen; the skipping itself had been
+  seen that evening with pushed weights: 6 of 24 reels skipped, pairs in a row included, and
+  a reel the user went back to was recorded as a correction and left alone.
+
+What it changes
+- Nothing leaves the phone and nothing has to be put on it: install, watch in Learning mode,
+  and Auto mode unlocks when the phone's own check says the model is right nine times in ten.
+- A correction, going back to a reel Auto mode skipped, is a WATCH label like any other and
+  is in the next fit.
+- Not measured: what a fit costs in battery, and a first week on a phone with no history.

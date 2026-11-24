@@ -17,12 +17,15 @@ it only predicts one thing, **will you skip this reel?**
 1. **Learning mode.** Watch Reels as usual. For every reel the app records how long you
    stayed, whether it looped or you liked it, a few frames from its first second, and the
    on-screen text (creator, caption, audio).
-2. **Personal model.** Frames and text are turned into embeddings on the device, and a
-   small per-user model learns `P(skip)` from your own behaviour.
-3. **Auto mode.** When a new reel starts, the app decides within about 1.5 s. If it is
-   confident you'd skip it, it swipes to the next one.
+2. **Personal model.** The first frame is turned into an embedding on the phone, and a
+   small model learns `P(skip)` from it, from who posted the reel and from how the session
+   is going. The model is fitted on the phone itself, again after every session.
+3. **Auto mode.** When a new reel starts, the app has its answer in about 0.15 s. If it is
+   confident you'd skip the reel, it swipes to the next one. Auto mode unlocks once the
+   model has shown, on your own recent days, that it is right at least nine times in ten;
+   expect a couple of weeks of Learning first.
 4. **Corrections.** Swipe back to a reel it skipped and that counts as "should have
-   watched". It learns from that too, so it improves the more you use it.
+   watched". The next fit learns from that too.
 
 It also understands what it is looking at: videos, single images, carousels and ads. Video
 length comes from the on-screen scrubber when there is one, and otherwise from noticing
@@ -37,7 +40,7 @@ default.
 flowchart LR
     A[Reels on screen] --> B[Accessibility service]
     B --> C[Frames + on-screen text]
-    C --> D[Image and text embeddings]
+    C --> D[Frame embedding + viewing history]
     D --> E["Personal model: P(skip)"]
     E -->|Learning| F[(Local log + label)]
     E -->|Auto, confident| G[Swipe to next]
@@ -72,8 +75,9 @@ right.
 
 - Everything runs on the device. The app has no internet permission, so nothing can be
   uploaded, and there is no account or server.
-- Raw video and audio are never stored. Thumbnails are kept only if you turn on research
-  mode, and you can delete them, the log, or everything at any time.
+- Raw video and audio are never stored. Of each reel's first frame the app keeps an
+  embedding, 576 numbers the model is fitted on. Thumbnails are kept only if you turn on
+  research mode. Everything can be deleted at any time, the model with it.
 - Only the screens of supported apps are read.
 - Hands-free mode is off until you turn it on. It uses the front camera only while a
   supported feed is on screen, and its frames are analysed in memory and never stored.
@@ -179,8 +183,9 @@ See [ml/README.md](ml/README.md) for the analysis loop and the quantization scri
 - [x] YouTube Shorts
 - [x] Offline baselines and first personal model ([experiment log](docs/experiments.md))
 - [x] Hands-free mode: camera gestures to skip and like
-- [ ] On-device inference and live prediction overlay
-- [ ] Auto mode with corrections
+- [x] On-device inference and training
+- [x] Auto mode with corrections
+- [ ] Live prediction overlay
 - [x] Encoder quantization and on-device benchmarks
 - [ ] Taste map, session report card
 - [ ] UI languages other than Korean: reel tracking uses view IDs, but a few signals (YouTube
